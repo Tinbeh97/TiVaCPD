@@ -392,7 +392,8 @@ class MMDA_CPD():
 class MMDATVGL_CPD():
     def __init__(self, series:np.array, p_wnd_dim:int=5, f_wnd_dim:int=10, threshold:int=.05, alpha:int=.05,
     kernel_type='gaussian', approx_type='permutation', B1:int=1000, B2:int=1000, B3:int=100, weights_type='uniform', l_minus:int=1, l_plus:int=5, 
-                                        alpha_:int=0.4, beta:int=0.4, penalty_type='L1', slice_size:int=10, overlap:int=1, max_iters:int=500, data_path = '', sample = ''):
+                                        alpha_:int=0.4, beta:int=0.4, penalty_type='L1', slice_size:int=10, overlap:int=1, max_iters:int=500, data_path = '', 
+                                        sample = '', wavelet=False):
         """
         @param series - timeseries
         @param p_wnd_dim - past window size
@@ -438,7 +439,8 @@ class MMDATVGL_CPD():
         self.max_iters = max_iters
         self.data_path = data_path
         self.sample = sample
-
+        self.wavelet = wavelet
+        
         self.mmd_score, self.mmd_logit = self.dynamic_windowing(p_wnd_dim, f_wnd_dim, series, threshold, alpha, kernel_type, 
                                                     approx_type, B1, B2, B3, weights_type, l_minus, l_plus)
 

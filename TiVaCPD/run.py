@@ -52,10 +52,10 @@ def main():
 
             data_path = os.path.join(args.out_path, args.exp)
 
-            X = X_samples[i]
+            X = X_samples[i] # Shape: (timestamps, num_features) 
                         
             model = MMDATVGL_CPD(X, max_iters = args.max_iters, overlap=args.overlap, alpha = 0.001, threshold = args.threshold, f_wnd_dim = args.f_wnd_dim, p_wnd_dim = args.p_wnd_dim,
-            slice_size=args.slice_size, data_path = data_path, sample = i) 
+            slice_size=args.slice_size, data_path = data_path, sample = i, penalty_type = args.penalty_type, wavelet = args.wavelet) 
             
             mmd_score = shift(model.mmd_score, args.p_wnd_dim)
            
@@ -210,7 +210,7 @@ if __name__=='__main__':
 
     parser = argparse.ArgumentParser(description='change point detection')
     parser.add_argument('--data_path',  default='./data/grump') # exact data dir, including the name of exp
-    parser.add_argument('--out_path', default = './out') # just the main out directory
+    parser.add_argument('--out_path', default = './out2') # just the main out directory
     parser.add_argument('--max_iters', type = int, default = 1000)
     parser.add_argument('--overlap', type = int, default = 1)
     parser.add_argument('--threshold', type = float, default = .2)
@@ -222,6 +222,8 @@ if __name__=='__main__':
     parser.add_argument('--margin', default = 10)
     parser.add_argument('--prefix', default = 'user')
     parser.add_argument('--slice_size', default = 10)
+    parser.add_argument('--wavelet', default = False, type= bool)
+    parser.add_argument('--penalty_type', default = 'L1', help='The TVGL penalty type; corrently accepts L1, L2, and perturbed')
 
     args = parser.parse_args()
 

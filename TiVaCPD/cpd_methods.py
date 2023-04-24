@@ -20,6 +20,7 @@ import torch
 from matplotlib import pyplot as plt
 from scipy.signal import savgol_filter
 import scipy.spatial.distance as sd
+import wavelet_util as wave_f
 
 
 sys.path.insert(1, './mmdagg/')
@@ -442,13 +443,13 @@ class MMDATVGL_CPD():
         self.wavelet = wavelet
         
         self.mmd_score, self.mmd_logit = self.dynamic_windowing(p_wnd_dim, f_wnd_dim, series, threshold, alpha, kernel_type, 
-                                                    approx_type, B1, B2, B3, weights_type, l_minus, l_plus)
+                                                    approx_type, B1, B2, B3, weights_type, l_minus, l_plus, wavelet=self.wavelet)
 
         self.corr_score = self.TVGL_(series=self.series, alpha = self.alpha_, beta =self.beta, penalty_type=self.penalty_type,
                                             slice_size=self.slice_size, overlap=self.overlap, threshold=self.threshold, max_iters=self.max_iters,
-                                            data_path = self.data_path, sample = self.sample)
+                                            data_path = self.data_path, sample = self.sample, wavelet = self.wavelet)
 
-    def dynamic_windowing(self, p_wnd_dim, f_wnd_dim, series, threshold, alpha, kernel_type, approx_type, B1, B2, B3, weight_type, l_minus, l_plus):
+    def dynamic_windowing(self, p_wnd_dim, f_wnd_dim, series, threshold, alpha, kernel_type, approx_type, B1, B2, B3, weight_type, l_minus, l_plus, wavelet=False):
 
         mmd_agg = np.asarray([])
 
@@ -460,6 +461,11 @@ class MMDATVGL_CPD():
         while i <= len(series):
             prev = series[max(int(i)-run_length,0):int(i), :]
             next = series[max(int(i),0):int(i)+int(f_wnd_dim), :]
+
+            if(wavelet):
+                next = wave_f.wavelet_t_win(next , wavelet = 'gaus5', mode='periodic')
+                prev = wave_f.wavelet_t_win(prev , wavelet = 'gaus5', mode='periodic')
+
 
             if next.shape[0]<=2 or prev.shape[0]<=2:
                 break
@@ -512,7 +518,7 @@ class MMDATVGL_CPD():
         correlation[covariance == 0] = 0
         return correlation
     
-    def TVGL_(self, series, alpha, beta, penalty_type, slice_size, overlap, threshold, max_iters, data_path, sample):
+    def TVGL_(self, series, alpha, beta, penalty_type, slice_size, overlap, threshold, max_iters, data_path, sample, wavelet=False):
         
         slice_size = int(slice_size) #min(int(len(series)*0.1), slice_size)
         

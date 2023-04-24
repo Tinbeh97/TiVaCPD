@@ -51,6 +51,9 @@ def main():
         if args.model_type == 'MMDATVGL_CPD':
 
             data_path = os.path.join(args.out_path, args.exp)
+            data_path += '_'+str(args.penalty_type)
+            if(args.wavelet):
+                data_path += '_wavelet'
 
             X = X_samples[i] # Shape: (timestamps, num_features) 
                         
@@ -76,8 +79,7 @@ def main():
             plt.legend()
             plt.title(args.exp)
             plt.show()
-
-            data_path = os.path.join(args.out_path, args.exp)
+            
             if not os.path.exists(args.out_path): 
                 os.mkdir(args.out_path)
             if not os.path.exists(data_path): 

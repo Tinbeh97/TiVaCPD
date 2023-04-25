@@ -45,6 +45,14 @@ def load_HAR(data_path, ind):
 
     return X, y_true
 
+def load_occupancy(data_path, ind):
+    with open(os.path.join(data_path, ''.join(['occupancy_X_', str(ind), '.pkl'])), 'rb') as f:
+            X = pkl.load(f)
+    with open(os.path.join(data_path, ''.join(['occupancy_y_', str(ind), '.pkl'])), 'rb') as f:
+            y_true = pkl.load(f)
+
+    return X, y_true
+
 def rmdiag(m):
     return m - np.diag(np.diag(m))
 

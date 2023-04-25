@@ -1,0 +1,10 @@
+python3 run.py --data_path ./data/HAR --exp HAR --prefix HAR_X
+python3 run.py --data_path ./data/HAR_new --exp HAR --model_type MMDATVGL_CPD --prefix HAR_X --penalty_type L1
+
+python3 experiments.py --data_path ./data/HAR_new --exp HAR --model_type MMDATVGL_CPD --data_type HAR
+
+##run.py is for training 
+##simulate.py is for simulating data -> Jumping Mean, changing_variance, changing correlation
+##simulate2.py -> Arbitrary CPs
+##experiments.py for evaluation part 
+##performance.py contains functions for experiments.py

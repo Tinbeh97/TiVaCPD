@@ -46,7 +46,7 @@ def main():
 
     for i in range(0, len(X_samples)):
         
-        print(i)
+        print('epoch: ',i)
 
         if args.model_type == 'MMDATVGL_CPD':
 
@@ -54,6 +54,11 @@ def main():
             data_path += '_'+str(args.penalty_type)
             if(args.wavelet):
                 data_path += '_wavelet'
+
+            if not os.path.exists(args.out_path): 
+                os.mkdir(args.out_path)
+            if not os.path.exists(data_path): 
+                os.mkdir(data_path)
 
             X = X_samples[i] # Shape: (timestamps, num_features) 
                         
@@ -72,6 +77,7 @@ def main():
             corr_score_savgol = savgol_filter(corr_score, 11,1)
             combined_score_savgol  = savgol_filter(np.add(abs(mmd_score_savgol), abs(corr_score_savgol)), 11,1)
             
+            """
             plt.figure(figsize= (30,3))
             plt.plot(mmd_score, label = 'DistScore')
             plt.plot(corr_score, label = 'CorrScore')
@@ -79,11 +85,7 @@ def main():
             plt.legend()
             plt.title(args.exp)
             plt.show()
-            
-            if not os.path.exists(args.out_path): 
-                os.mkdir(args.out_path)
-            if not os.path.exists(data_path): 
-                os.mkdir(data_path)
+            #"""
 
             save_data(os.path.join(data_path, ''.join(['series_', str(i), '.pkl'])), X)
             save_data(os.path.join(data_path, ''.join(['mmd_score_', str(i), '.pkl'])), mmd_score)

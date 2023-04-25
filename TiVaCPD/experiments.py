@@ -489,7 +489,7 @@ if __name__=='__main__':
 
     parser = argparse.ArgumentParser(description='change point detection')
     parser.add_argument('--data_path',  default='./data/changing_correlation') # exact data dir, including the name of exp
-    parser.add_argument('--out_path', default = './out') # just the main out directory
+    parser.add_argument('--out_path', default = './out2') # just the main out directory
     parser.add_argument('--data_type', default = 'simulated_data') # others: beedance, HAR, block
     parser.add_argument('--max_iters', type = int, default = 500)
     parser.add_argument('--overlap', type = int, default = 1)

@@ -1,3 +1,6 @@
+python=3.9.16
+torch
+pyampd
 ruptures
 keras
 matplotlib
@@ -10,3 +13,4 @@ tensorflow
 timesynth
 sympy
 numba
+PyWavelets

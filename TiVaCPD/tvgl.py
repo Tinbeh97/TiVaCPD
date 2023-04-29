@@ -5,6 +5,7 @@ from tvgl_penalty import soft_threshold_odd, element_wise, group_lasso, perturbe
 class TVGL():
     def __init__(self, alpha, beta, penalty_type, slice_size,
             rho=1, max_iters=1e5, e_abs=1e-4, e_rel=1e-4, overlap=1):
+        #e_abs=1e-3, e_rel=1e-3 in the original code 
         self.alpha = alpha
         self.beta = beta
         self.penalty_type = penalty_type

@@ -148,20 +148,11 @@ def main():
         if args.model_type == 'MMDATVGL_CPD':
             
             data_path = os.path.join(args.out_path, args.exp)
-            data_path += '_'+str(args.penalty_type)
-            if(args.wavelet):
-                data_path += '_wavelet'
-
-            if not os.path.exists(args.out_path): 
-                os.mkdir(args.out_path) 
-            if not os.path.exists(data_path): 
-                os.mkdir(data_path) 
 
             X = X_samples[i]
             y_true = y_true_samples[i]
             
-            model = MMDATVGL_CPD(X, max_iters = args.max_iters, overlap=args.overlap, alpha = 0.001, threshold = args.threshold, f_wnd_dim = args.f_wnd_dim, p_wnd_dim = args.p_wnd_dim, 
-                                 data_path = data_path, sample = i, slice_size=args.slice_size,  penalty_type = args.penalty_type, wavelet = args.wavelet) 
+            model = MMDATVGL_CPD(X, max_iters = args.max_iters, overlap=args.overlap, alpha = 0.001, threshold = args.threshold, f_wnd_dim = args.f_wnd_dim, p_wnd_dim = args.p_wnd_dim, data_path = data_path, sample = i, slice_size=args.slice_size) 
 
             mmd_score = model.mmd_score #shift(model.mmd_score, args.p_wnd_dim)
             corr_score = model.corr_score
@@ -186,7 +177,12 @@ def main():
 
             if not np.all((combined_score_savgol == 0)):
                 combined_score_savgol /= np.max(np.abs(combined_score_savgol),axis=0)
-                        
+            
+            # save intermediate results
+            if not os.path.exists(args.out_path): 
+                os.mkdir(args.out_path) 
+            if not os.path.exists(data_path): 
+                os.mkdir(data_path) 
 
             save_data(os.path.join(data_path, ''.join(['series_', str(i), '.pkl'])), X) 
             save_data(os.path.join(data_path, ''.join(['y_true_', str(i), '.pkl'])), y_true) 
@@ -505,8 +501,7 @@ if __name__=='__main__':
     parser.add_argument('--score_type', default='combined') # others: combined, correlation, mmdagg
     parser.add_argument('--margin', default = 5)
     parser.add_argument('--slice_size', default = 7)
-    parser.add_argument('--wavelet', default = False, type= bool)
-    parser.add_argument('--penalty_type', default = 'L1', help='The TVGL penalty type; corrently accepts L1, L2, and perturbed')
+    parser.add_argument('--ckpt', help='model\'s checkpoint location')
 
     args = parser.parse_args()
 

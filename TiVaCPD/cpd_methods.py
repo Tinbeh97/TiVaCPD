@@ -358,7 +358,7 @@ class MMDA_CPD():
             else:   
                 run_length += 1
                 mmd_agg = np.concatenate((mmd_agg, np.repeat(0, 1)))
-            i=i+1
+            i = i+1
         #mmd_agg = np.absolute(mmd_agg)
 
         # Min-max 
@@ -657,13 +657,14 @@ class KLCPD():
         
         device = torch.device('cpu')
 
-        model = KL_CPD(series.shape[1], p_wnd_dim=p_wnd_dim, f_wnd_dim = f_wnd_dim).to(device)
+        self.model = KL_CPD(series.shape[1], p_wnd_dim=p_wnd_dim, f_wnd_dim = f_wnd_dim).to(device)
 
-        model.fit(series, epoches=epochs)
+        self.model.fit(series, epoches=epochs)
 
-        scores = model.predict(series)
+        scores = self.model.predict(series)
 
         return scores
+    
 
     def visualize_results(self, series, scores, gt_cov, gt_mean, gt_var, label):
 

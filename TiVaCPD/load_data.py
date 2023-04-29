@@ -8,7 +8,7 @@ import json
 import pickle as pkl
 import scipy
 import scipy.spatial.distance as sd
-
+from sklearn.model_selection import train_test_split
 
 def load_data(data_path, ind, prefix):
     
@@ -53,6 +53,17 @@ def load_occupancy(data_path, ind):
 
     return X, y_true
 
+def seg_id(X,Y, data_type):
+    if(data_type=='HAR'):
+        id_train = list(np.arrange(0, 21, 1))
+        id_test = list(np.arrange(21, 29, 1))
+        x_train, y_train = X[id_train], Y[id_train]
+        x_test, y_test = X[id_test], Y[id_test]
+    else:
+        x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.2)
+    return  x_train, x_test, y_train, y_test
+    
+     
 def rmdiag(m):
     return m - np.diag(np.diag(m))
 

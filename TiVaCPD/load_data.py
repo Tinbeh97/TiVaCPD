@@ -53,14 +53,14 @@ def load_occupancy(data_path, ind):
 
     return X, y_true
 
-def seg_id(X,Y, data_type):
+def seg_data(X,Y, data_type):
     if(data_type=='HAR'):
         id_train = list(np.arrange(0, 21, 1))
         id_test = list(np.arrange(21, 29, 1))
         x_train, y_train = X[id_train], Y[id_train]
         x_test, y_test = X[id_test], Y[id_test]
     else:
-        x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.2)
+        x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.9)
     return  x_train, x_test, y_train, y_test
     
      

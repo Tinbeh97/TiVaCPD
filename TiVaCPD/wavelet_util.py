@@ -7,7 +7,7 @@ import pywt
 
 def wavelet_t_win(data, feat_id=None, width_num = 5, wavelet='mexh', mode='smooth', ext_len=7, plot_wav=False):
     if(feat_id==None):
-        feat_id = np.arrange(data.shape[1])
+        feat_id = np.arange(data.shape[1])
     feat_vec = data
     for id in list(feat_id):
         par_data = data[:,id]
@@ -19,7 +19,7 @@ def wavelet_t_win(data, feat_id=None, width_num = 5, wavelet='mexh', mode='smoot
             ext_data = pywt.pad(par_data, ext_len, mode)
             cwtmatr, freqs = pywt.cwt(ext_data, widths, wavelet) #mexh
             transform_data = np.array(cwtmatr)[:, ext_len:-ext_len]
-        feat_vec.appned(transform_data.T)
+        feat_vec = np.append(feat_vec, transform_data.T, axis=1)
 
         if(plot_wav):
             x = np.arrange(len(par_data))

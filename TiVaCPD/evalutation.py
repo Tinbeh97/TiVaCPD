@@ -143,6 +143,12 @@ def main():
     precision_scores  =[]
     recall_scores = []
 
+    if args.data_type in ['HAR', 'har']:
+        x_train, x_test, y_train, y_test = seg_data(X_samples,y_true_samples, 'HAR')
+    else:
+        x_train, x_test, y_train, y_test = seg_data(X_samples,y_true_samples, 'others')
+
+
     for i in range(0, len(X_samples)):
         print(i)
         if args.model_type == 'MMDATVGL_CPD':

@@ -394,7 +394,7 @@ class MMDATVGL_CPD():
     def __init__(self, series:np.array, p_wnd_dim:int=5, f_wnd_dim:int=10, threshold:int=.05, alpha:int=.05,
     kernel_type='gaussian', approx_type='permutation', B1:int=1000, B2:int=1000, B3:int=100, weights_type='uniform', l_minus:int=1, l_plus:int=5, 
                                         alpha_:int=0.4, beta:int=0.4, penalty_type='L1', slice_size:int=10, overlap:int=1, max_iters:int=500, data_path = '', 
-                                        sample = '', wavelet=False):
+                                        sample = '', wavelet=False, wave_shape = 'mexh', wave_ext = 'smooth'):
         """
         @param series - timeseries
         @param p_wnd_dim - past window size
@@ -441,7 +441,9 @@ class MMDATVGL_CPD():
         self.data_path = data_path
         self.sample = sample
         self.wavelet = wavelet
-        
+        self.wave_shape = wave_shape #'gaus1-5'
+        self.wave_ext = wave_ext #'periodic'
+
         self.mmd_score, self.mmd_logit = self.dynamic_windowing(p_wnd_dim, f_wnd_dim, series, threshold, alpha, kernel_type, 
                                                     approx_type, B1, B2, B3, weights_type, l_minus, l_plus, wavelet=self.wavelet)
 
@@ -463,8 +465,8 @@ class MMDATVGL_CPD():
             next = series[max(int(i),0):int(i)+int(f_wnd_dim), :]
 
             if(wavelet):
-                next = wave_f.wavelet_t_win(next , wavelet = 'gaus5', mode='periodic')
-                prev = wave_f.wavelet_t_win(prev , wavelet = 'gaus5', mode='periodic')
+                next = wave_f.wavelet_t_win(next , wavelet = self.wave_shape, mode=self.wave_ext)
+                prev = wave_f.wavelet_t_win(prev , wavelet = self.wave_shape, mode=self.wave_ext)
 
 
             if next.shape[0]<=2 or prev.shape[0]<=2:

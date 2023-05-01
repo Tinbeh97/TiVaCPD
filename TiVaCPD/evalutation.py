@@ -148,6 +148,16 @@ def main():
     else:
         x_train, x_test, y_train, y_test = seg_data(X_samples,y_true_samples, 'others')
 
+    #Hyper-parameters tuning
+    for i, X in enumerate(len(x_train)):
+        print(i)
+        y_true = y_train[i]
+
+        if args.model_type == 'MMDATVGL_CPD':
+            data_path = os.path.join(args.out_path, args.exp)
+            data_path += '_'+str(args.penalty_type)
+            if(args.wavelet):
+                data_path += '_wavelet'
 
     for i in range(0, len(X_samples)):
         print(i)

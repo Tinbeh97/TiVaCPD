@@ -5,10 +5,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pywt
 
-def wavelet_t_win(data, feat_id=None, width_num = 5, wavelet='mexh', mode='smooth', ext_len=7, plot_wav=False):
+def wavelet_t_win(data, feat_id=None, width_num = 5, wavelet='mexh', mode='smooth', ext_len=5, plot_wav=False):
     if(feat_id==None):
         feat_id = np.arange(data.shape[1])
-    feat_vec = data
+    #feat_vec = data
+    feat_vec = np.empty(data.shape, data.dtype)
     for id in list(feat_id):
         par_data = data[:,id]
         widths = np.arange(1, width_num)

@@ -444,9 +444,13 @@ class MMDATVGL_CPD():
         self.wave_shape = wave_shape #'gaus1-5'
         self.wave_ext = wave_ext #'periodic'
 
+        if(wavelet):
+            self.series = wave_f.wavelet_t_win(self.series , wavelet = self.wave_shape, mode=self.wave_ext)
+            #print(f'initial feature shape: {series.shape} and after transition shape: {self.series.shape}')
+
         self.mmd_score, self.mmd_logit = self.dynamic_windowing(p_wnd_dim, f_wnd_dim, series, threshold, alpha, kernel_type, 
                                                     approx_type, B1, B2, B3, weights_type, l_minus, l_plus, wavelet=self.wavelet)
-
+        print('mmd_agg finished')
         self.corr_score = self.TVGL_(series=self.series, alpha = self.alpha_, beta =self.beta, penalty_type=self.penalty_type,
                                             slice_size=self.slice_size, overlap=self.overlap, threshold=self.threshold, max_iters=self.max_iters,
                                             data_path = self.data_path, sample = self.sample, wavelet = self.wavelet)
@@ -464,10 +468,11 @@ class MMDATVGL_CPD():
             prev = series[max(int(i)-run_length,0):int(i), :]
             next = series[max(int(i),0):int(i)+int(f_wnd_dim), :]
 
+            """
             if(wavelet):
                 next = wave_f.wavelet_t_win(next , wavelet = self.wave_shape, mode=self.wave_ext)
                 prev = wave_f.wavelet_t_win(prev , wavelet = self.wave_shape, mode=self.wave_ext)
-
+            #"""
 
             if next.shape[0]<=2 or prev.shape[0]<=2:
                 break
@@ -525,6 +530,7 @@ class MMDATVGL_CPD():
         slice_size = int(slice_size) #min(int(len(series)*0.1), slice_size)
         
         data = series
+            
         model = TVGL(alpha, beta, penalty_type, slice_size, overlap=overlap, max_iters=max_iters)
 
         model.fit(series)

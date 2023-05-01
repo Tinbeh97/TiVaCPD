@@ -149,15 +149,36 @@ def main():
         x_train, x_test, y_train, y_test = seg_data(X_samples,y_true_samples, 'others')
 
     #Hyper-parameters tuning
-    for i, X in enumerate(len(x_train)):
-        print(i)
-        y_true = y_train[i]
+    #alpha_set = np.linspace(0.2, 1 , 3)     
+    #beta_set = np.logspace(0, 1.3, 3) 
+    hyp_params = {'threshold':[.2,.02,.002],'slice_size':[14, 10, 5],'alpha_':[5, 1, 0.4],'beta':[12, 6, 0.4],
+            'wave_shape':['gaus1','mexh','shan','cgau3'],'wave_ext':['symmetric','smooth']}
+    best_params = [.2, 10, 0.4, 0.4, 'mexh','smooth']
+    best_dev_f1_score = 0
+    comb = [list(np.arange(3)),list(np.arange(3)),list(np.arange(3)),list(np.arange(3)), list(np.arange(4)), list(np.arange(2))]
+    grid_index = list(itertools.product(*comb))
+    random_index = random.choices(grid_index, k=20)
+    f1_list = []
+    for ind in random_index: 
+        threshold = list(hp_params['threshold'])[ind[0]]
+        slice_size = list(hp_params['slice_size'])[ind[1]]
+        alpha_ = list(hp_params['alpha_'])[ind[2]]
+        beta = list(hp_params['beta'])[ind[3]]
+        wave_shape = list(hp_params['wave_shape'])[ind[4]]
+        wave_ext = list(hp_params['wave_ext'])[ind[5]]
+        for i, X in enumerate(len(x_train)):
+            print(i)
+            y_true = y_train[i]
 
-        if args.model_type == 'MMDATVGL_CPD':
-            data_path = os.path.join(args.out_path, args.exp)
-            data_path += '_'+str(args.penalty_type)
-            if(args.wavelet):
-                data_path += '_wavelet'
+            if args.model_type == 'MMDATVGL_CPD':
+                data_path = os.path.join(args.out_path, args.exp)
+                data_path += '_'+str(args.penalty_type)
+                if(args.wavelet):
+                    data_path += '_wavelet'
+
+        if dev_acc > best_dev_acc:
+            best_dev_acc = dev_acc
+            best_params = [ep, bs, lr, drop, opt_type]
 
     for i in range(0, len(X_samples)):
         print(i)

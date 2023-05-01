@@ -195,10 +195,17 @@ def main():
 
         
             y_pred = mmd_score
+            print('here min: ', np.min(y_true), np.min(y_pred))
+            print('here max: ', np.max(y_true), np.max(y_pred))
+            print('here mean: ', np.mean(y_true), np.mean(y_pred))
+
             metrics = ComputeMetrics(y_true, y_pred, args.margin)
             print("DistScore:", "AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
 
             y_pred = corr_score
+            print('corr min: ', np.min(y_true), np.min(y_pred))
+            print('corr max: ', np.max(y_true), np.max(y_pred))
+            print('corr mean: ', np.mean(y_true), np.mean(y_pred))
             metrics = ComputeMetrics(y_true, y_pred, args.margin)
             print("CorrScore:", "AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
 

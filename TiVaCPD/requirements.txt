@@ -1,8 +1,8 @@
-python=3.9.16
-torch
+#python=3.9.16
+#torch
 pyampd
 ruptures
-keras
+#keras
 matplotlib
 numpy
 pandas

@@ -159,7 +159,9 @@ def main():
     grid_index = list(itertools.product(*comb))
     random_index = random.choices(grid_index, k=20)
     #params = {key: random.sample(value, 1)[0] for key, value in hyp_params.items()}
-
+    #For bayesian optimization
+    #https://towardsdatascience.com/a-conceptual-explanation-of-bayesian-model-based-hyperparameter-optimization-for-machine-learning-b8172278050f
+    #https://github.com/WillKoehrsen/hyperparameter-optimization/blob/master/Kaggle%20Version%20of%20Bayesian%20Hyperparameter%20Optimization%20of%20GBM.ipynb
     f1_list = []
     for ind in random_index: 
         threshold = list(hp_params['threshold'])[ind[0]]

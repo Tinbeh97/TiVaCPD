@@ -18,8 +18,10 @@ class TVGL():
 
     def fit(self, X):
         self.covariance_set = gen_s(X, self.slice_size, self.overlap)
-        self.precision_set = admm(X, self.covariance_set, self.alpha, self.beta, self.penalty_type,
+        print('gen_s finished')
+        self.precision_set, self.offset = admm(X, self.covariance_set, self.alpha, self.beta, self.penalty_type,
         self.slice_size, self.rho, self.max_iters, self.e_abs, self.e_rel)
+        print('admm finished')
 
 def gen_s(X, slice_size, overlap):
     S = []
@@ -196,7 +198,8 @@ def check_convergence(rho, e_abs, e_rel, theta, z0, z0_pre, u0):
         res_dual += norm
     res_dual = np.sqrt(res_pri)
 
-    return (res_pri < e_pri) and (res_dual < e_dual)
+    offset = abs(res_pri - e_pri)/2 + abs(res_dual - e_dual)/2
+    return (res_pri < e_pri) and (res_dual < e_dual), offset
 
 def admm(X, S, alpha, beta, penalty_type, slice_size, rho, max_iters, e_abs, e_rel):
     #set penalty_type
@@ -231,9 +234,12 @@ def admm(X, S, alpha, beta, penalty_type, slice_size, rho, max_iters, e_abs, e_r
 
         u0, u1, u2 = update_u(slice_size, S, rho, alpha, beta, theta, z0, z1, z2, u0, u1, u2)
         iters = iters + 1
-        if check_convergence(rho, e_abs, e_rel, theta, z0, z_pre, u0) == True:
+        converged, offset = check_convergence(rho, e_abs, e_rel, theta, z0, z_pre, u0)
+        if converged:
             break
     if iters == max_iters:
         print("max iters", iters)
+    else:
+        print("num convergence iter: ", iters)
 
-    return theta
+    return theta, offset

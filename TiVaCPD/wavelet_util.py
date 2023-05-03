@@ -33,7 +33,7 @@ def wavelet_t_win(data, feat_id=None, width_num = 5, wavelet='mexh', mode='smoot
                 plt.plot(x, transform_data[i],'--g')
                 plt.show()
 
-    return np.array(feat_vec) + np.random.normal(.1, .5, feat_vec.shape)#np.finfo(np.float32).eps
+    return np.array(feat_vec) #+ np.random.normal(.1, .5, feat_vec.shape)#np.finfo(np.float32).eps
         
 def plot_wav(name='fbsp', scale=5):
     wav = pywt.ContinuousWavelet(name)

@@ -20,6 +20,7 @@ import pickle as pkl
 from scipy.signal import savgol_filter
 import warnings
 from scipy.signal import peak_prominences
+import scipy.stats as stats
 from pyampd.ampd import find_peaks, find_peaks_adaptive
 import ruptures as rpt
 
@@ -165,6 +166,8 @@ def main():
 
             mmd_score = model.mmd_score #shift(model.mmd_score, args.p_wnd_dim)
             corr_score = model.corr_score
+
+            print('offset value: ', model.offset)
             
             minLength = min(len(mmd_score), len(corr_score)) 
             corr_score = (corr_score)[:minLength]
@@ -186,7 +189,24 @@ def main():
 
             if not np.all((combined_score_savgol == 0)):
                 combined_score_savgol /= np.max(np.abs(combined_score_savgol),axis=0)
-                        
+            """
+            mmd_score_nor = stats.zscore(mmd_score)
+            mmd_score_nor = (mmd_score_nor - np.min(mmd_score_nor)) / (np.max(mmd_score_nor) - np.min(mmd_score_nor))
+
+            corr_score_nor = stats.zscore(corr_score)
+            corr_score_nor = (corr_score_nor - np.min(corr_score_nor)) / (np.max(corr_score_nor) - np.min(corr_score_nor))
+            
+            combined_score_nor = np.add(mmd_score_nor, corr_score_nor)
+            y_pred = mmd_score_nor
+            metrics = ComputeMetrics(y_true, y_pred, args.margin)
+            print("Norm DistScore:", "AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
+            y_pred = corr_score_nor
+            metrics = ComputeMetrics(y_true, y_pred, args.margin)
+            print("Norm CorrScore:", "AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
+            y_pred = combined_score_nor
+            metrics= ComputeMetrics(y_true, y_pred, args.margin)
+            print("Norm EnsembleScore:", "AUC:", np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
+            #"""
 
             save_data(os.path.join(data_path, ''.join(['series_', str(i), '.pkl'])), X) 
             save_data(os.path.join(data_path, ''.join(['y_true_', str(i), '.pkl'])), y_true) 
@@ -209,9 +229,11 @@ def main():
             print("Processed:")
 
             y_pred = mmd_score_savgol
+            """
             print('mmd min: ', np.min(y_true), np.min(y_pred))
             print('mmd max: ', np.max(y_true), np.max(y_pred))
             print('mmd mean: ', np.mean(y_true), np.mean(y_pred))
+            #"""
             metrics = ComputeMetrics(y_true, y_pred, args.margin)
             auc_scores_mmdagg.append(metrics.auc)
             f1_scores_mmdagg.append(metrics.f1) 
@@ -220,9 +242,11 @@ def main():
             print("DistScore:", "AUC:", np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
 
             y_pred = corr_score_savgol
+            """
             print('corr min: ', np.min(y_true), np.min(y_pred))
             print('corr max: ', np.max(y_true), np.max(y_pred))
             print('corr mean: ', np.mean(y_true), np.mean(y_pred))
+            #"""
             metrics = ComputeMetrics(y_true, y_pred, args.margin)
             auc_scores_correlation.append(metrics.auc)
             f1_scores_correlation.append(metrics.f1) 

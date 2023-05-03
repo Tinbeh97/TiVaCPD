@@ -539,6 +539,7 @@ class MMDATVGL_CPD():
         model.fit(series)
         # set of precision matrices
         
+        self.offset = model.offset
         
         ps = model.precision_set
         col_names = []
@@ -594,6 +595,7 @@ class MMDATVGL_CPD():
             corr_score=np.concatenate((corr_score, np.repeat(0, overlap-1)))
 
         # Create interpretability heatmap
+        """
         new_index = pd.RangeIndex(len(df)*(1))
         new_df = pd.DataFrame(0.0, index=new_index, columns=df.columns)
         
@@ -624,15 +626,6 @@ class MMDATVGL_CPD():
         ax.tick_params(axis='x', rotation=90)
         ax2.tick_params(axis='x', rotation=90)
     
-        # Zero-padding to account for scaling 
-        if len(corr_score) > len(data):
-            corr_score=corr_score[:len(data)]
-        else:
-            corr_score=np.concatenate((corr_score, np.zeros(int(data.shape[0]-len(corr_score)))))
-        
-        # Min-max scaling 
-        if not np.all((corr_score == 0)):
-            corr_score /= np.max(np.abs(corr_score),axis=0)
         
         plt.legend()
         ax2.legend(asdf.columns)
@@ -642,6 +635,17 @@ class MMDATVGL_CPD():
             save_data(os.path.join(data_path, ''.join(['CorrScore_interpretability_Matrix_', str(sample), '.pkl'])), new_df)
         else:
             plt.show()
+        #"""
+        
+        # Zero-padding to account for scaling 
+        if len(corr_score) > len(data):
+            corr_score=corr_score[:len(data)]
+        else:
+            corr_score=np.concatenate((corr_score, np.zeros(int(data.shape[0]-len(corr_score)))))
+        
+        # Min-max scaling 
+        if not np.all((corr_score == 0)):
+            corr_score /= np.max(np.abs(corr_score),axis=0)
         
         return corr_score
 

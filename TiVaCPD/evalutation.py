@@ -158,6 +158,8 @@ def main():
     comb = [list(np.arange(3)),list(np.arange(3)),list(np.arange(3)),list(np.arange(3)), list(np.arange(4)), list(np.arange(2))]
     grid_index = list(itertools.product(*comb))
     random_index = random.choices(grid_index, k=20)
+    #params = {key: random.sample(value, 1)[0] for key, value in hyp_params.items()}
+
     f1_list = []
     for ind in random_index: 
         threshold = list(hp_params['threshold'])[ind[0]]
@@ -169,28 +171,45 @@ def main():
         for i, X in enumerate(len(x_train)):
             print(i)
             y_true = y_train[i]
-
+            f1_scores = []
             if args.model_type == 'MMDATVGL_CPD':
                 data_path = os.path.join(args.out_path, args.exp)
                 data_path += '_'+str(args.penalty_type)
                 if(args.wavelet):
                     data_path += '_wavelet'
+                model = MMDATVGL_CPD(X, max_iters = args.max_iters, overlap=args.overlap, alpha = 0.001, threshold = threshold, f_wnd_dim = args.f_wnd_dim, p_wnd_dim = args.p_wnd_dim, data_path = data_path, sample = i,
+                                 slice_size=slice_size, alpha_=alpha_, beta=beta, wave_shape=wave_shape, wave_ext=wave_ext) 
+                mmd_score = model.mmd_score #shift(model.mmd_score, args.p_wnd_dim)
+                corr_score = model.corr_score
+                minLength = min(len(mmd_score), len(corr_score)) 
+                corr_score = (corr_score)[:minLength]
+                mmd_score = mmd_score[:minLength] 
+                combined_score = np.add(abs(mmd_score), abs(corr_score)) 
+                y_true = y_true[:minLength]
+                metrics = ComputeMetrics(y_true, combined_score, args.margin)
+                f1_score = np.round(metrics.f1,2)
+                f1_scores.append(f1_score)
 
-        if dev_acc > best_dev_acc:
-            best_dev_acc = dev_acc
-            best_params = [ep, bs, lr, drop, opt_type]
+        f1_scores = np.mean(f1_scores)
+        f1_list.append(f1_scores)
+        if f1_scores > best_dev_f1_score:
+            best_dev_f1_score = f1_scores
+            best_params = [threshold, slice_size, alpha_, beta, wave_shape, wave_ext]
 
-    for i in range(0, len(X_samples)):
+    threshold, slice_size, alpha_, beta, wave_shape, wave_ext = best_params
+
+    for i in range(0, len(X_test)):
         print(i)
         if args.model_type == 'MMDATVGL_CPD':
             
             data_path = os.path.join(args.out_path, args.exp)
 
             X = X_samples[i]
-            y_true = y_true_samples[i]
+            y_true = y_test[i]
             
-            model = MMDATVGL_CPD(X, max_iters = args.max_iters, overlap=args.overlap, alpha = 0.001, threshold = args.threshold, f_wnd_dim = args.f_wnd_dim, p_wnd_dim = args.p_wnd_dim, data_path = data_path, sample = i, slice_size=args.slice_size) 
-
+            model = MMDATVGL_CPD(X, max_iters = args.max_iters, overlap=args.overlap, alpha = 0.001, threshold = threshold, f_wnd_dim = args.f_wnd_dim, p_wnd_dim = args.p_wnd_dim, data_path = data_path, sample = i,
+                                 slice_size=slice_size, alpha_=alpha_, beta=beta, wave_shape=wave_shape, wave_ext=wave_ext) 
+                
             mmd_score = model.mmd_score #shift(model.mmd_score, args.p_wnd_dim)
             corr_score = model.corr_score
             

@@ -11,7 +11,8 @@ def soft_threshold_odd(z0, theta, u0, alpha, rho):
     for n in range(len(z0)):
         a = theta[n] + u0[n]
         dimension = np.shape(a)[0]
-        A = np.eye(dimension)
+        #A = np.eye(dimension)
+        A = np.zeros((dimension, dimension))
         for i in range(dimension - 1):
             for j in range(i + 1, dimension):
                 if abs(a[i, j]) > parameter:
@@ -35,8 +36,11 @@ def element_wise(z1, z2, theta, u2, u1, beta, rho):
         for i in range(dimension):
             for j in range(dimension):
                 if abs(a[i, j]) > eta:
-                    A[i, j] = np.sign(a[i, j])*(
+                    result = np.sign(a[i, j])*(
                         abs(a[i, j]) - eta)
+                    A[i, j] = result
+                    A[j, i] = result
+
         z1[n - 1] = (1 / 2) * (theta[n - 1] + theta[n] + u1[n - 1] + u2[n]) - (1 / 2) * A
         z2[n] = (1 / 2) * (theta[n - 1] + theta[n] + u1[n - 1] + u2[n]) + (1 / 2) * A
     return z1, z2

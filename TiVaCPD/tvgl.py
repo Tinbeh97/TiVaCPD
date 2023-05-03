@@ -200,12 +200,12 @@ def check_convergence(rho, e_abs, e_rel, theta, z0, z0_pre, u0):
 
 def admm(X, S, alpha, beta, penalty_type, slice_size, rho, max_iters, e_abs, e_rel):
     #set penalty_type
-    """ # previous version 
-    if penalty_type == "L1":
-        update_z = update_z_l1
-    elif penalty_type == "L2":
-        update_z = update_z_l2
-    #"""
+    prev_version = True
+    if(prev_version):
+        if penalty_type == "L1":
+            update_z = update_z_l1
+        elif penalty_type == "L2":
+            update_z = update_z_l2
 
     #initialize theta, z, u
     theta = initialize_theta(S)
@@ -218,14 +218,16 @@ def admm(X, S, alpha, beta, penalty_type, slice_size, rho, max_iters, e_abs, e_r
     while iters < max_iters:
         z_pre = z0
         theta = update_theta(slice_size, S, rho, alpha, beta, theta, z0, z1, z2, u0, u1, u2)
-        #z0, z1, z2 = update_z(slice_size, S, rho, alpha, beta, theta, z0, z1, z2, u0, u1, u2)
-        z0 = soft_threshold_odd(z0, theta, u0, alpha, rho)
-        if penalty_type == "L1":
-            z1, z2 = element_wise(z1, z2, theta, u2, u1, beta, rho)
-        elif penalty_type == "L2":
-            z1, z2 = group_lasso(z1, z2, theta, u2, u1, beta, rho)
-        elif penalty_type == "perturbed":
-            z1, z2 = perturbed_node(z1, z2, theta, u2, u1, beta, rho)
+        if(prev_version):
+            z0, z1, z2 = update_z(slice_size, S, rho, alpha, beta, theta, z0, z1, z2, u0, u1, u2)
+        else:
+            z0 = soft_threshold_odd(z0, theta, u0, alpha, rho)
+            if penalty_type == "L1":
+                z1, z2 = element_wise(z1, z2, theta, u2, u1, beta, rho)
+            elif penalty_type == "L2":
+                z1, z2 = group_lasso(z1, z2, theta, u2, u1, beta, rho)
+            elif penalty_type == "perturbed":
+                z1, z2 = perturbed_node(z1, z2, theta, u2, u1, beta, rho)
 
         u0, u1, u2 = update_u(slice_size, S, rho, alpha, beta, theta, z0, z1, z2, u0, u1, u2)
         iters = iters + 1

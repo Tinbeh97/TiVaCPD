@@ -175,7 +175,7 @@ def main():
             # processed combined score
 
             mmd_score_savgol  = mmd_score #savgol_filter(mmd_score, 11, 1)  
-            corr_score_savgol = savgol_filter(corr_score, 7, 1) 
+            corr_score_savgol = savgol_filter(corr_score, 7, 1) #savgol_filter(x, window_length, polyorder
             
             #if not np.all((mmd_score_savgol == 0)):
             #    mmd_score_savgol /= np.max(np.abs(mmd_score_savgol),axis=0)
@@ -195,17 +195,10 @@ def main():
 
         
             y_pred = mmd_score
-            print('here min: ', np.min(y_true), np.min(y_pred))
-            print('here max: ', np.max(y_true), np.max(y_pred))
-            print('here mean: ', np.mean(y_true), np.mean(y_pred))
-
             metrics = ComputeMetrics(y_true, y_pred, args.margin)
             print("DistScore:", "AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
 
             y_pred = corr_score
-            print('corr min: ', np.min(y_true), np.min(y_pred))
-            print('corr max: ', np.max(y_true), np.max(y_pred))
-            print('corr mean: ', np.mean(y_true), np.mean(y_pred))
             metrics = ComputeMetrics(y_true, y_pred, args.margin)
             print("CorrScore:", "AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
 
@@ -216,6 +209,9 @@ def main():
             print("Processed:")
 
             y_pred = mmd_score_savgol
+            print('mmd min: ', np.min(y_true), np.min(y_pred))
+            print('mmd max: ', np.max(y_true), np.max(y_pred))
+            print('mmd mean: ', np.mean(y_true), np.mean(y_pred))
             metrics = ComputeMetrics(y_true, y_pred, args.margin)
             auc_scores_mmdagg.append(metrics.auc)
             f1_scores_mmdagg.append(metrics.f1) 
@@ -224,6 +220,9 @@ def main():
             print("DistScore:", "AUC:", np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
 
             y_pred = corr_score_savgol
+            print('corr min: ', np.min(y_true), np.min(y_pred))
+            print('corr max: ', np.max(y_true), np.max(y_pred))
+            print('corr mean: ', np.mean(y_true), np.mean(y_pred))
             metrics = ComputeMetrics(y_true, y_pred, args.margin)
             auc_scores_correlation.append(metrics.auc)
             f1_scores_correlation.append(metrics.f1) 

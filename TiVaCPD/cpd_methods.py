@@ -11,6 +11,7 @@ import sys
 import argparse
 import seaborn as sns
 from sklearn.svm import l1_min_c
+from sklearn import preprocessing
 from sympy import beta
 from torch import alpha_dropout
 from tvgl import *
@@ -444,10 +445,12 @@ class MMDATVGL_CPD():
         self.wave_shape = wave_shape #'gaus1-5'
         self.wave_ext = wave_ext #'periodic'
 
+        #self.series = preprocessing.normalize(self.series, axis=0)
+
         if(wavelet):
             self.series = wave_f.wavelet_t_win(self.series , wavelet = self.wave_shape, mode=self.wave_ext)
             #print(f'initial feature shape: {series.shape} and after transition shape: {self.series.shape}')
-
+        
         self.mmd_score, self.mmd_logit = self.dynamic_windowing(p_wnd_dim, f_wnd_dim, series, threshold, alpha, kernel_type, 
                                                     approx_type, B1, B2, B3, weights_type, l_minus, l_plus, wavelet=self.wavelet)
         print('mmd_agg finished')

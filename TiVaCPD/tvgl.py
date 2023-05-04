@@ -17,11 +17,13 @@ class TVGL():
         self.overlap = overlap
 
     def fit(self, X):
+        
         self.covariance_set = gen_s(X, self.slice_size, self.overlap)
         print('gen_s finished')
         self.precision_set, self.offset = admm(X, self.covariance_set, self.alpha, self.beta, self.penalty_type,
         self.slice_size, self.rho, self.max_iters, self.e_abs, self.e_rel)
         print('admm finished')
+
 
 def gen_s(X, slice_size, overlap):
     S = []

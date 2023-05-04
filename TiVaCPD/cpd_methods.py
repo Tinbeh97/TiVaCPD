@@ -444,19 +444,45 @@ class MMDATVGL_CPD():
         self.wavelet = wavelet
         self.wave_shape = wave_shape #'gaus1-5'
         self.wave_ext = wave_ext #'periodic'
-
-        #self.series = preprocessing.normalize(self.series, axis=0)
+        self.remove_corr = True
 
         if(wavelet):
+            self.series = preprocessing.normalize(self.series, axis=0)
             self.series = wave_f.wavelet_t_win(self.series , wavelet = self.wave_shape, mode=self.wave_ext)
             #print(f'initial feature shape: {series.shape} and after transition shape: {self.series.shape}')
-        
+        if(self.remove_corr):
+            self.r_corr_feat(self.series)
+
         self.mmd_score, self.mmd_logit = self.dynamic_windowing(p_wnd_dim, f_wnd_dim, series, threshold, alpha, kernel_type, 
                                                     approx_type, B1, B2, B3, weights_type, l_minus, l_plus, wavelet=self.wavelet)
         print('mmd_agg finished')
         self.corr_score = self.TVGL_(series=self.series, alpha = self.alpha_, beta =self.beta, penalty_type=self.penalty_type,
                                             slice_size=self.slice_size, overlap=self.overlap, threshold=self.threshold, max_iters=self.max_iters,
                                             data_path = self.data_path, sample = self.sample, wavelet = self.wavelet)
+
+    def r_corr_feat(self, X, thresh=.9, print_corr_matrix=False):
+        X_ = stats.zscore(X, axis=0)
+        #X = (X - np.min(X))/(np.max(X) - np.min(X))
+        print('shape X: ', X_.shape)
+        S = np.cov(X_.T)
+        print('Corr shape: ', S.shape, np.max(S), np.min(S))
+        S = np.tril(S, -1)
+
+        if(print_corr_matrix):
+            plt.imshow(S, cmap='hot', interpolation='nearest')
+            plt.colorbar()
+            plt.axis('off')
+            plt.savefig('image_out' + '/corr_matrix.png')
+
+        S = S.reshape(-1)
+        index_m = np.arange(len(S))
+        list_index = index_m[S>thresh]
+        #list_index = [index for index,value in enumerate(S) if value > thresh]
+        list_index = list_index % len(X)
+        X_up = np.delete(X, list_index, axis=1)
+        print('length updated list: ', X_up.shape)
+        
+        return X_up
 
     def dynamic_windowing(self, p_wnd_dim, f_wnd_dim, series, threshold, alpha, kernel_type, approx_type, B1, B2, B3, weight_type, l_minus, l_plus, wavelet=False):
 

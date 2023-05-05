@@ -189,13 +189,22 @@ def main():
 
             if not np.all((combined_score_savgol == 0)):
                 combined_score_savgol /= np.max(np.abs(combined_score_savgol),axis=0)
-            """
+            #"""
             mmd_score_nor = stats.zscore(mmd_score)
-            mmd_score_nor = (mmd_score_nor - np.min(mmd_score_nor)) / (np.max(mmd_score_nor) - np.min(mmd_score_nor))
-
+            #mmd_score_nor = (mmd_score_nor - np.min(mmd_score_nor)) / (np.max(mmd_score_nor) - np.min(mmd_score_nor))
             corr_score_nor = stats.zscore(corr_score)
-            corr_score_nor = (corr_score_nor - np.min(corr_score_nor)) / (np.max(corr_score_nor) - np.min(corr_score_nor))
+            #corr_score_nor = (corr_score_nor - np.min(corr_score_nor)) / (np.max(corr_score_nor) - np.min(corr_score_nor))
             
+            q3, q1 = np.percentile(mmd_score_nor, [75 ,25])
+            mmd_iqr = q3 - q1
+            mmd_vote = (mmd_score_nor > (1.5 * mmd_iqr))
+            q3, q1 = np.percentile(corr_score_nor, [75 ,25])
+            corr_iqr = q3 - q1
+
+            W = np.dot(corr_score_nor, mmd_score_nor) / len(corr_score_nor)
+            D = np.mean(abs(corr_score_nor - mmd_score_nor))
+            print('weights: ', W, D)
+
             combined_score_nor = np.add(mmd_score_nor, corr_score_nor)
             y_pred = mmd_score_nor
             metrics = ComputeMetrics(y_true, y_pred, args.margin)

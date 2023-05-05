@@ -448,7 +448,7 @@ class MMDATVGL_CPD():
 
         if(wavelet):
             self.series = preprocessing.normalize(self.series, axis=0)
-            self.series = wave_f.wavelet_t_win(self.series , wavelet = self.wave_shape, mode=self.wave_ext)
+            self.series = wave_f.wavelet_t_win(self.series , wavelet = self.wave_shape, mode=self.wave_ext, width_num=3)
             #print(f'initial feature shape: {series.shape} and after transition shape: {self.series.shape}')
         if(self.remove_corr):
             self.r_corr_feat(self.series)
@@ -465,8 +465,8 @@ class MMDATVGL_CPD():
         #X = (X - np.min(X))/(np.max(X) - np.min(X))
         print('shape X: ', X_.shape)
         S = np.cov(X_.T)
-        print('Corr shape: ', S.shape, np.max(S), np.min(S))
         S = np.tril(S, -1)
+        print('Corr shape: ', S.shape, np.max(S), np.min(S))
 
         if(print_corr_matrix):
             plt.imshow(S, cmap='hot', interpolation='nearest')
@@ -476,9 +476,9 @@ class MMDATVGL_CPD():
 
         S = S.reshape(-1)
         index_m = np.arange(len(S))
-        list_index = index_m[S>thresh]
+        list_index = index_m[abs(S)>thresh]
         #list_index = [index for index,value in enumerate(S) if value > thresh]
-        list_index = list_index % len(X)
+        list_index = list_index % X.shape[1]
         X_up = np.delete(X, list_index, axis=1)
         print('length updated list: ', X_up.shape)
         

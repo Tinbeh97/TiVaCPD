@@ -166,6 +166,9 @@ def main():
 
             mmd_score = model.mmd_score #shift(model.mmd_score, args.p_wnd_dim)
             corr_score = model.corr_score
+            if(args.wavelet):
+                mmd_score_wave = model.mmd_score_wave
+                corr_score_wave = model.corr_score_wave
 
             print('offset value: ', model.offset)
             
@@ -197,21 +200,25 @@ def main():
             
             q3, q1 = np.percentile(mmd_score_nor, [75 ,25])
             mmd_iqr = q3 - q1
-            mmd_vote = (mmd_score_nor > (1.5 * mmd_iqr))
+            mmd_vote = (mmd_score_nor < (1.5 * mmd_iqr))
             q3, q1 = np.percentile(corr_score_nor, [75 ,25])
             corr_iqr = q3 - q1
+            corr_vote = (corr_score_nor < (1.5 * corr_iqr))
 
-            W = np.dot(corr_score_nor, mmd_score_nor) / len(corr_score_nor)
+            W = np.dot(corr_score_nor, mmd_score_nor) / (len(corr_score_nor) - 1)
+            W2 = np.cov(corr_score_nor, mmd_score_nor)[1]
             D = np.mean(abs(corr_score_nor - mmd_score_nor))
-            print('weights: ', W, D)
+            print('weights: ', W, W2, D)
 
-            combined_score_nor = np.add(mmd_score_nor, corr_score_nor)
             y_pred = mmd_score_nor
+            mmd_score_nor = y_pred
             metrics = ComputeMetrics(y_true, y_pred, args.margin)
             print("Norm DistScore:", "AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
-            y_pred = corr_score_nor
+            y_pred = corr_score_nor * corr_vote.astype(int)
+            corr_score_nor = y_pred
             metrics = ComputeMetrics(y_true, y_pred, args.margin)
             print("Norm CorrScore:", "AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
+            combined_score_nor = np.add(mmd_score_nor, corr_score_nor)
             y_pred = combined_score_nor
             metrics= ComputeMetrics(y_true, y_pred, args.margin)
             print("Norm EnsembleScore:", "AUC:", np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))

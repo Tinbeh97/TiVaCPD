@@ -21,8 +21,8 @@ def wavelet_t_win(data, feat_id=None, width_num = 5, wavelet='mexh', mode='smoot
             cwtmatr, freqs = pywt.cwt(ext_data, widths, wavelet) #mexh
             transform_data = np.array(cwtmatr)[:, ext_len:-ext_len]
         if(flag_s):
-            feat_vec = np.append(data, transform_data.T, axis=1)
-            #feat_vec = transform_data.T
+            #feat_vec = np.append(data, transform_data.T, axis=1)
+            feat_vec = transform_data.T
             flag_s = False
         else:
             feat_vec = np.append(feat_vec, transform_data.T, axis=1)

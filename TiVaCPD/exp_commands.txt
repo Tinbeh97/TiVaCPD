@@ -12,3 +12,4 @@ python3 experiments.py --data_path ./data/beedance --exp beedance --model_type M
 ##performance.py contains functions for experiments.py
 ##I think exp_2.py is the previous version of the experiments.py
 ##main.py for visualizing the final scores' var, mean, and cov results 
+##evaluation.py is for hyperparameter tuning

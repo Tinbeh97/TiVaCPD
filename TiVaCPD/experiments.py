@@ -138,6 +138,10 @@ def main():
     f1_scores_mmdagg= []
     precision_scores_mmdagg = []
     recall_scores_mmdagg = []
+    final_auc_scores_combined =  []
+    final_f1_scores_combined = []
+    final_precision_scores_combined = []
+    final_recall_scores_combined = []
 
     auc_scores = []
     f1_scores = []
@@ -196,25 +200,64 @@ def main():
             mmd_score_nor = stats.zscore(mmd_score)
             #mmd_score_nor = (mmd_score_nor - np.min(mmd_score_nor)) / (np.max(mmd_score_nor) - np.min(mmd_score_nor))
             corr_score_nor = stats.zscore(corr_score)
-            #corr_score_nor = (corr_score_nor - np.min(corr_score_nor)) / (np.max(corr_score_nor) - np.min(corr_score_nor))
             
-            q3, q1 = np.percentile(mmd_score_nor, [75 ,25])
-            mmd_iqr = q3 - q1
-            mmd_vote = (mmd_score_nor < (1.5 * mmd_iqr))
             q3, q1 = np.percentile(corr_score_nor, [75 ,25])
             corr_iqr = q3 - q1
             corr_vote = (corr_score_nor < (1.5 * corr_iqr))
+            corr_score_nor = corr_score_nor * corr_vote.astype(int)
 
-            W = np.dot(corr_score_nor, mmd_score_nor) / (len(corr_score_nor) - 1)
-            W2 = np.cov(corr_score_nor, mmd_score_nor)[1]
-            D = np.mean(abs(corr_score_nor - mmd_score_nor))
-            print('weights: ', W, W2, D)
+            all_scores = [mmd_score_nor, corr_score_nor, corr_score_savgol, combined_score_savgol]
+            print('all score shape: ', np.array(all_scores).shape)
+
+            if(args.wavelet):
+                mmd_score_wave_nor = stats.zscore(mmd_score_wave)
+                corr_score_wave_nor = stats.zscore(corr_score_wave)
+                q3, q1 = np.percentile(corr_score_wave_nor, [75 ,25])
+                corr_vote = (corr_score_wave_nor < (1.5 * (q3 - q1)))
+                corr_score_wave_nor = corr_score_wave_nor * corr_vote.astype(int)
+                all_scores = all_scores.append(mmd_score_wave_nor)
+                all_scores = all_scores.append(corr_score_wave_nor)
+            
+            w_corr = True
+            all_scores = np.transpose(np.array(all_scores))
+            print('all score shape: ', all_scores.shape)
+
+            if(args.ensemble_win):
+                final_score = windowed_ensemble(all_scores, window_size=7, w_corr=w_corr)
+            else:
+                if(w_corr):
+                    W = np.cov(all_scores.T)
+                    W = np.sum(W , axis = 0)
+                    print('weight W: ', W)
+                    final_score1 = np.dot(all_scores, W) / sum(W)
+                #else:
+                    score_num = all_scores.shape[1]
+                    D = np.zeros((score_num,score_num))
+                    for i in range(score_num):
+                        for j in range(i+1, score_num):
+                            D[i,j] =  np.mean(abs(all_scores[:,i] - all_scores[:,j]))
+                            D[j,i] = D[i,j]
+                    W = np.sum(D, axis = 0) 
+                    print('weight D: ', W)
+                final_score = np.dot(all_scores, W) / sum(W)
+            
+            y_pred = final_score1
+            metrics= ComputeMetrics(y_true, y_pred, args.margin)
+            print("W Weighted ensemble score:", "AUC:", np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
+            
+            y_pred = final_score
+            metrics= ComputeMetrics(y_true, y_pred, args.margin)
+            print("D Weighted ensemble score:", "AUC:", np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
+            final_auc_scores_combined.append(np.round(metrics.auc,3))
+            final_f1_scores_combined.append(np.round(metrics.f1,3))
+            final_precision_scores_combined.append(np.round(metrics.precision,3))
+            final_recall_scores_combined.append(np.round(metrics.recall,3))
 
             y_pred = mmd_score_nor
             mmd_score_nor = y_pred
             metrics = ComputeMetrics(y_true, y_pred, args.margin)
             print("Norm DistScore:", "AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
-            y_pred = corr_score_nor * corr_vote.astype(int)
+            y_pred = corr_score_nor
             corr_score_nor = y_pred
             metrics = ComputeMetrics(y_true, y_pred, args.margin)
             print("Norm CorrScore:", "AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
@@ -527,6 +570,12 @@ def main():
         print("f1_scores_mmdagg_CI", mean_confidence_interval(f1_scores_mmdagg))
         print("precision_scores_mmdagg_CI", mean_confidence_interval(precision_scores_mmdagg))
         print("recall_scores_mmdagg_CI", mean_confidence_interval(recall_scores_mmdagg))
+
+        print("auc_scores", mean_confidence_interval(final_auc_scores_combined))
+        print("f1_scores", mean_confidence_interval(final_f1_scores_combined))
+        print("precision_scores", mean_confidence_interval(final_precision_scores_combined))
+        print("recall_scores", mean_confidence_interval(final_recall_scores_combined))
+        
     else:
         print(args.data_type, args.model_type, args.exp)
         print("auc_CI", mean_confidence_interval(auc_scores))
@@ -553,6 +602,7 @@ if __name__=='__main__':
     parser.add_argument('--slice_size', default = 7)
     parser.add_argument('--wavelet', default = False, type= bool)
     parser.add_argument('--penalty_type', default = 'L1', help='The TVGL penalty type; corrently accepts L1, L2, and perturbed')
+    parser.add_argument('--ensemble_win', default = False, help='Whether to find ensemble weights for windowed scores')
 
     args = parser.parse_args()
 

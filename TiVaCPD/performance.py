@@ -214,3 +214,24 @@ def shift(arr, shift):
     if shift > 0: m_arr[:shift] = ma.masked
     else: m_arr[shift:] = ma.masked
     return m_arr.filled(0)
+
+def windowed_ensemble(all_scores, window_size=7, w_corr=True):
+    final_score = []
+    for i in range(np.ceil(len(all_scores)/window_size)):
+        upper_index = min((i+1)*window_size, len(all_scores))
+        scores = all_scores[i:upper_index]
+        if(w_corr):
+            W = np.cov(scores.T)
+            W = np.sum(W , axis = 0)
+        else:
+            score_num = scores.shape[1]
+            D = np.zeros((score_num,score_num))
+            for i in range(score_num):
+                for j in range(i+1, score_num):
+                    D[i,j] =  np.mean(abs(all_scores[:,i] - all_scores[:,j]))
+                    D[j,i] = D[i,j]
+                    #D[i,j] =  np.mean(abs(all_scores[i] - np.mean(all_scores[j])))
+            W = np.sum(D, axis = 0)
+        scores = np.dot(scores, W) / sum(W)
+        final_score.append(scores)
+    return np.array(final_score)

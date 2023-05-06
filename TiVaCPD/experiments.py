@@ -166,7 +166,7 @@ def main():
             y_true = y_true_samples[i]
             
             model = MMDATVGL_CPD(X, max_iters = args.max_iters, overlap=args.overlap, alpha = 0.001, threshold = args.threshold, f_wnd_dim = args.f_wnd_dim, p_wnd_dim = args.p_wnd_dim, 
-                                 data_path = data_path, sample = i, slice_size=args.slice_size,  penalty_type = args.penalty_type, wavelet = False) 
+                                 data_path = data_path, sample = i, slice_size=args.slice_size,  penalty_type = args.penalty_type, wavelet = False, data_type=args.data_type) 
 
             mmd_score = model.mmd_score #shift(model.mmd_score, args.p_wnd_dim)
             corr_score = model.corr_score
@@ -244,8 +244,8 @@ def main():
                     W = np.cov(all_scores.T)
                     W = np.sum(W , axis = 0)
                     print('weight W: ', W)
-                    final_score1 = np.dot(all_scores, W) / sum(W)
-                #else:
+                    #final_score1 = np.dot(all_scores, W) / sum(W)
+                else:
                     score_num = all_scores.shape[1]
                     D = np.zeros((score_num,score_num))
                     for i in range(score_num):
@@ -255,11 +255,12 @@ def main():
                     W = np.sum(D, axis = 0) 
                     print('weight D: ', W)
                 final_score = np.dot(all_scores, W) / sum(W)
-            
+            """
             y_pred = final_score1
             metrics= ComputeMetrics(y_true, y_pred, args.margin)
             print("W Weighted ensemble score:", "AUC:", np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
-            
+            #"""
+
             y_pred = final_score
             metrics= ComputeMetrics(y_true, y_pred, args.margin)
             print("D Weighted ensemble score:", "AUC:", np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))

@@ -135,11 +135,17 @@ def main():
     #Hyper-parameters tuning
     #alpha_set = np.linspace(0.2, 1 , 3)     
     #beta_set = np.logspace(0, 1.3, 3) 
-    hyp_params = {'threshold':[.2,.02,.002],'slice_size':[14, 10, 5],'alpha_':[5, 1, 0.4],'beta':[12, 6, 0.4],
-            'wave_shape':['gaus1','mexh','shan','cgau3'],'wave_ext':['symmetric','smooth']}
-    best_params = [.2, 10, 0.4, 0.4, 'mexh','smooth']
+    if(args.wavelet):
+        hyp_params = {'threshold':[.2,.02,.002],'slice_size':[14, 10, 5],'alpha_':[5, 1, 0.4],'beta':[12, 6, 0.4],
+                'wave_shape':['gaus1','mexh','shan','cgau3'],'wave_ext':['symmetric','smooth']}
+        best_params = [.2, 10, 0.4, 0.4, 'mexh','smooth']
+        comb = [list(np.arange(3)),list(np.arange(3)),list(np.arange(3)),list(np.arange(3)), list(np.arange(4)), list(np.arange(2))]
+    else:
+        hyp_params = {'threshold':[.2,.02,.002],'slice_size':[14, 10, 5],'alpha_':[5, 1, 0.4],'beta':[12, 6, 0.4]}
+        best_params = [.2, 10, 0.4, 0.4]
+        comb = [list(np.arange(3)),list(np.arange(3)),list(np.arange(3)),list(np.arange(3))]
+    
     best_dev_f1_score = 0
-    comb = [list(np.arange(3)),list(np.arange(3)),list(np.arange(3)),list(np.arange(3)), list(np.arange(4)), list(np.arange(2))]
     grid_index = list(itertools.product(*comb))
     random_index = random.choices(grid_index, k=20)
     #params = {key: random.sample(value, 1)[0] for key, value in hyp_params.items()}
@@ -154,8 +160,9 @@ def main():
         slice_size = list(hyp_params['slice_size'])[ind[1]]
         alpha_ = list(hyp_params['alpha_'])[ind[2]]
         beta = list(hyp_params['beta'])[ind[3]]
-        wave_shape = list(hyp_params['wave_shape'])[ind[4]]
-        wave_ext = list(hyp_params['wave_ext'])[ind[5]]
+        if(args.wavelet):
+            wave_shape = list(hyp_params['wave_shape'])[ind[4]]
+            wave_ext = list(hyp_params['wave_ext'])[ind[5]]
         for i in range(len(x_train)):
             print(i)
             X = x_train[i]
@@ -164,7 +171,7 @@ def main():
             data_path = os.path.join(args.out_path, args.exp)
             data_path += '_'+str(args.penalty_type)
             model = MMDATVGL_CPD(X, max_iters = args.max_iters, overlap=args.overlap, alpha = 0.001, threshold = threshold, f_wnd_dim = args.f_wnd_dim, p_wnd_dim = args.p_wnd_dim, data_path = data_path, sample = i,
-                                slice_size=slice_size, alpha_=alpha_, beta=beta, wave_shape=wave_shape, wave_ext=wave_ext) 
+                                slice_size=slice_size, alpha_=alpha_, beta=beta) 
             mmd_score = model.mmd_score #shift(model.mmd_score, args.p_wnd_dim)
             corr_score = model.corr_score
             minLength = min(len(mmd_score), len(corr_score)) 
@@ -355,6 +362,7 @@ if __name__=='__main__':
     parser.add_argument('--slice_size', default = 7)
     parser.add_argument('--ckpt', help='model\'s checkpoint location')
     parser.add_argument('--penalty_type', default = 'L1', help='The TVGL penalty type; corrently accepts L1, L2, and perturbed')
+    parser.add_argument('--wavelet', default = False, type= bool)
 
     args = parser.parse_args()
 

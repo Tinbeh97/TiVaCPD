@@ -183,7 +183,7 @@ def main():
                 minLength = min(minLength, minLength_wav)
                 mmd_score_wave = mmd_score_wave[:minLength] 
                 corr_score_wave = corr_score_wave[:minLength] 
-                
+
             corr_score = (corr_score)[:minLength]
             mmd_score = mmd_score[:minLength] 
             combined_score = np.add(abs(mmd_score), abs(corr_score)) 
@@ -226,14 +226,12 @@ def main():
             if(args.wavelet):
                 mmd_score_wave_nor = stats.zscore(mmd_score_wave)
                 corr_score_wave_nor = stats.zscore(corr_score_wave)
-                print('here: ', corr_score_wave_nor.shape)
                 q3, q1 = np.percentile(corr_score_wave_nor, [75 ,25])
                 corr_iqr = q3 - q1
                 corr_vote = (corr_score_wave_nor < (1.5 * corr_iqr))
                 corr_score_wave_nor = corr_score_wave_nor * corr_vote.astype(int)
                 all_scores.append(mmd_score_wave_nor)
                 all_scores.append(corr_score_wave_nor)
-                print('there: ', corr_score_wave_nor.shape)
 
             
             w_corr = True

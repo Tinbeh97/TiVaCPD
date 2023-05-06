@@ -126,23 +126,6 @@ def main():
     if not os.path.exists(os.path.join(args.out_path, args.exp)):
         os.mkdir(os.path.join(args.out_path, args.exp, args.model_type))
     
-    auc_scores_combined =  []
-    f1_scores_combined = []
-    precision_scores_combined = []
-    recall_scores_combined = []
-    auc_scores_correlation =  []
-    f1_scores_correlation= []
-    precision_scores_correlation = []
-    recall_scores_correlation = []
-    auc_scores_mmdagg =  []
-    f1_scores_mmdagg= []
-    precision_scores_mmdagg = []
-    recall_scores_mmdagg = []
-
-    auc_scores = []
-    f1_scores = []
-    precision_scores  =[]
-    recall_scores = []
 
     if args.data_type in ['HAR', 'har']:
         x_train, x_test, y_train, y_test = seg_data(X_samples,y_true_samples, 'HAR')
@@ -164,64 +147,65 @@ def main():
     #https://towardsdatascience.com/a-conceptual-explanation-of-bayesian-model-based-hyperparameter-optimization-for-machine-learning-b8172278050f
     #https://github.com/WillKoehrsen/hyperparameter-optimization/blob/master/Kaggle%20Version%20of%20Bayesian%20Hyperparameter%20Optimization%20of%20GBM.ipynb
     f1_list = []
+    print('length data for hyp tuning: ', len(x_train))
     for ind in random_index: 
+        print('rand indices: ', ind)
         threshold = list(hyp_params['threshold'])[ind[0]]
         slice_size = list(hyp_params['slice_size'])[ind[1]]
         alpha_ = list(hyp_params['alpha_'])[ind[2]]
         beta = list(hyp_params['beta'])[ind[3]]
         wave_shape = list(hyp_params['wave_shape'])[ind[4]]
         wave_ext = list(hyp_params['wave_ext'])[ind[5]]
-        for i, X in enumerate(len(x_train)):
+        for i in range(len(x_train)):
             print(i)
+            X = x_train[i]
             y_true = y_train[i]
             f1_scores = []
-            if args.model_type == 'MMDATVGL_CPD':
-                data_path = os.path.join(args.out_path, args.exp)
-                data_path += '_'+str(args.penalty_type)
-                if(args.wavelet):
-                    data_path += '_wavelet'
-                model = MMDATVGL_CPD(X, max_iters = args.max_iters, overlap=args.overlap, alpha = 0.001, threshold = threshold, f_wnd_dim = args.f_wnd_dim, p_wnd_dim = args.p_wnd_dim, data_path = data_path, sample = i,
-                                 slice_size=slice_size, alpha_=alpha_, beta=beta, wave_shape=wave_shape, wave_ext=wave_ext) 
-                mmd_score = model.mmd_score #shift(model.mmd_score, args.p_wnd_dim)
-                corr_score = model.corr_score
-                minLength = min(len(mmd_score), len(corr_score)) 
-                corr_score = (corr_score)[:minLength]
-                mmd_score = mmd_score[:minLength] 
-                y_true = y_true[:minLength]
+            data_path = os.path.join(args.out_path, args.exp)
+            data_path += '_'+str(args.penalty_type)
+            model = MMDATVGL_CPD(X, max_iters = args.max_iters, overlap=args.overlap, alpha = 0.001, threshold = threshold, f_wnd_dim = args.f_wnd_dim, p_wnd_dim = args.p_wnd_dim, data_path = data_path, sample = i,
+                                slice_size=slice_size, alpha_=alpha_, beta=beta, wave_shape=wave_shape, wave_ext=wave_ext) 
+            mmd_score = model.mmd_score #shift(model.mmd_score, args.p_wnd_dim)
+            corr_score = model.corr_score
+            minLength = min(len(mmd_score), len(corr_score)) 
+            corr_score = (corr_score)[:minLength]
+            mmd_score = mmd_score[:minLength] 
+            y_true = y_true[:minLength]
 
-                mmd_score_nor = stats.zscore(mmd_score)
-                corr_score_nor = stats.zscore(corr_score)
-                q3, q1 = np.percentile(corr_score_nor, [75 ,25])
-                corr_iqr = q3 - q1
-                corr_vote = (corr_score_nor < (1.5 * corr_iqr))
-                corr_score_nor = corr_score_nor * corr_vote.astype(int)
+            mmd_score_nor = stats.zscore(mmd_score)
+            corr_score_nor = stats.zscore(corr_score)
+            q3, q1 = np.percentile(corr_score_nor, [75 ,25])
+            corr_iqr = q3 - q1
+            corr_vote = (corr_score_nor < (1.5 * corr_iqr))
+            corr_score_nor = corr_score_nor * corr_vote.astype(int)
 
-                mmd_score_savgol  = mmd_score  
-                corr_score_savgol = savgol_filter(corr_score, 7, 1)
-                combined_score_savgol  = savgol_filter(np.add(abs(mmd_score_savgol), abs(corr_score_savgol)), 11,   1) 
+            mmd_score_savgol  = mmd_score  
+            corr_score_savgol = savgol_filter(corr_score, 7, 1)
+            combined_score_savgol  = savgol_filter(np.add(abs(mmd_score_savgol), abs(corr_score_savgol)), 11,   1) 
 
-                all_scores = [mmd_score_nor, corr_score_nor, corr_score_savgol, combined_score_savgol]
-                all_scores = np.transpose(np.array(all_scores))
+            all_scores = [mmd_score_nor, corr_score_nor, corr_score_savgol, combined_score_savgol]
+            all_scores = np.transpose(np.array(all_scores))
 
-                w_corr = True
-                if(w_corr):
-                    W = np.cov(all_scores.T)
-                    W = np.sum(W , axis = 0)
-                    print('weight W: ', W)
-                else:
-                    score_num = all_scores.shape[1]
-                    D = np.zeros((score_num,score_num))
-                    for i in range(score_num):
-                        for j in range(i+1, score_num):
-                            D[i,j] =  np.mean(abs(all_scores[:,i] - all_scores[:,j]))
-                            D[j,i] = D[i,j]
-                    W = np.sum(D, axis = 0) 
-                    print('weight D: ', W)
-                final_score = np.dot(all_scores, W) / sum(W)
-            
-                metrics = ComputeMetrics(y_true, final_score, args.margin)
-                f1_score = np.round(metrics.f1,2)
-                f1_scores.append(f1_score)
+            w_corr = True
+            if(w_corr):
+                W = np.cov(all_scores.T)
+                W = np.sum(W , axis = 0)
+                print('weight W: ', W)
+            else:
+                score_num = all_scores.shape[1]
+                D = np.zeros((score_num,score_num))
+                for i in range(score_num):
+                    for j in range(i+1, score_num):
+                        D[i,j] =  np.mean(abs(all_scores[:,i] - all_scores[:,j]))
+                        D[j,i] = D[i,j]
+                W = np.sum(D, axis = 0) 
+                print('weight D: ', W)
+            final_score = np.dot(all_scores, W) / sum(W)
+        
+            metrics = ComputeMetrics(y_true, final_score, args.margin)
+            f1_score = np.round(metrics.f1,2)
+            print('f1 score: ', f1_score)
+            f1_scores.append(f1_score)
 
         f1_scores = np.mean(f1_scores)
         f1_list.append(f1_scores)
@@ -230,8 +214,10 @@ def main():
             best_params = [threshold, slice_size, alpha_, beta, wave_shape, wave_ext]
 
     threshold, slice_size, alpha_, beta, wave_shape, wave_ext = best_params
-    print('best params: ', best_params)
     print('f1 scores: ', f1_list)
+    print(mean_confidence_interval(f1_list))
+    print('best params: ', best_params)
+    print('best f1 score: ', best_dev_f1_score)
     """
     for i in range(0, len(x_test)):
         print(i)
@@ -368,6 +354,7 @@ if __name__=='__main__':
     parser.add_argument('--margin', default = 5)
     parser.add_argument('--slice_size', default = 7)
     parser.add_argument('--ckpt', help='model\'s checkpoint location')
+    parser.add_argument('--penalty_type', default = 'L1', help='The TVGL penalty type; corrently accepts L1, L2, and perturbed')
 
     args = parser.parse_args()
 

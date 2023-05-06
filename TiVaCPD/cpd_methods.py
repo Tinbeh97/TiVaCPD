@@ -446,6 +446,11 @@ class MMDATVGL_CPD():
         self.wave_ext = wave_ext #'periodic'
         self.remove_corr = True
 
+        if(wavelet):
+            self.series = preprocessing.normalize(self.series, axis=0)
+            self.series = wave_f.wavelet_t_win(self.series , wavelet = self.wave_shape, mode=self.wave_ext, width_num=3)
+            threshold = min(threshold, .05)
+            
           #print(f'initial feature shape: {series.shape} and after transition shape: {self.series.shape}')
         if(self.remove_corr):
             self.r_corr_feat(self.series)
@@ -456,18 +461,7 @@ class MMDATVGL_CPD():
         self.corr_score = self.TVGL_(series=self.series, alpha = self.alpha_, beta =self.beta, penalty_type=self.penalty_type,
                                             slice_size=self.slice_size, overlap=self.overlap, threshold=self.threshold, max_iters=self.max_iters,
                                             data_path = self.data_path, sample = self.sample, wavelet = self.wavelet)
-        if(wavelet):
-            self.series = preprocessing.normalize(self.series, axis=0)
-            self.series = wave_f.wavelet_t_win(self.series , wavelet = self.wave_shape, mode=self.wave_ext, width_num=3)
-            if(self.remove_corr):
-                self.r_corr_feat(self.series)
-            threshold = min(threshold, .005)
-            self.mmd_score_wave = self.dynamic_windowing(p_wnd_dim, f_wnd_dim, series, threshold, alpha, kernel_type, 
-                                                    approx_type, B1, B2, B3, weights_type, l_minus, l_plus, wavelet=self.wavelet)
-            self.corr_score_wave= self.TVGL_(series=self.series, alpha = self.alpha_, beta =self.beta, penalty_type=self.penalty_type,
-                                            slice_size=self.slice_size, overlap=self.overlap, threshold=threshold, max_iters=self.max_iters,
-                                            data_path = self.data_path, sample = self.sample, wavelet = self.wavelet)
-        
+       
         
     def r_corr_feat(self, X, thresh=.9, print_corr_matrix=False):
         X_ = stats.zscore(X, axis=0)

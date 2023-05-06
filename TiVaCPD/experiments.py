@@ -166,20 +166,23 @@ def main():
             y_true = y_true_samples[i]
             
             model = MMDATVGL_CPD(X, max_iters = args.max_iters, overlap=args.overlap, alpha = 0.001, threshold = args.threshold, f_wnd_dim = args.f_wnd_dim, p_wnd_dim = args.p_wnd_dim, 
-                                 data_path = data_path, sample = i, slice_size=args.slice_size,  penalty_type = args.penalty_type, wavelet = args.wavelet) 
+                                 data_path = data_path, sample = i, slice_size=args.slice_size,  penalty_type = args.penalty_type, wavelet = False) 
 
             mmd_score = model.mmd_score #shift(model.mmd_score, args.p_wnd_dim)
             corr_score = model.corr_score
+
             if(args.wavelet):
-                mmd_score_wave = model.mmd_score_wave
-                corr_score_wave = model.corr_score_wave
+                model_wav = MMDATVGL_CPD(X, max_iters = args.max_iters, overlap=args.overlap, alpha = 0.001, threshold = args.threshold, f_wnd_dim = args.f_wnd_dim, p_wnd_dim = args.p_wnd_dim, 
+                                 data_path = data_path, sample = i, slice_size=args.slice_size,  penalty_type = args.penalty_type, wavelet = True) 
+                mmd_score_wave = model_wav.mmd_score
+                corr_score_wave = model_wav.corr_score
 
             print('offset value: ', model.offset)
             
             minLength = min(len(mmd_score), len(corr_score)) 
             if(args.wavelet):
                 minLength_wav = min(len(mmd_score_wave), len(corr_score_wave))
-                print('min lengths: ',minLength_wav, minLength)
+                print('min lengths: ',len(mmd_score_wave), len(corr_score_wave), minLength_wav, minLength)
                 minLength = min(minLength, minLength_wav)
                 mmd_score_wave = mmd_score_wave[:minLength] 
                 corr_score_wave = corr_score_wave[:minLength] 
@@ -188,12 +191,6 @@ def main():
             mmd_score = mmd_score[:minLength] 
             combined_score = np.add(abs(mmd_score), abs(corr_score)) 
             y_true = y_true[:minLength]
-
-            if(args.wavelet):
-                minLength_wav = min(len(mmd_score_wave), len(corr_score_wave))
-                print(minLength_wav, minLength)
-                mmd_score_wave = mmd_score_wave[:minLength] 
-                corr_score_wave = corr_score_wave[:minLength] 
 
 
             # processed combined score
@@ -225,13 +222,15 @@ def main():
 
             if(args.wavelet):
                 mmd_score_wave_nor = stats.zscore(mmd_score_wave)
+                """
                 corr_score_wave_nor = stats.zscore(corr_score_wave)
                 q3, q1 = np.percentile(corr_score_wave_nor, [75 ,25])
                 corr_iqr = q3 - q1
                 corr_vote = (corr_score_wave_nor < (1.5 * corr_iqr))
                 corr_score_wave_nor = corr_score_wave_nor * corr_vote.astype(int)
+                #"""
                 all_scores.append(mmd_score_wave_nor)
-                all_scores.append(corr_score_wave_nor)
+                #all_scores.append(corr_score_wave_nor)
 
             
             w_corr = True

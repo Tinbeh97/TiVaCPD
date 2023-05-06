@@ -459,7 +459,9 @@ class MMDATVGL_CPD():
         if(wavelet):
             self.series = preprocessing.normalize(self.series, axis=0)
             self.series = wave_f.wavelet_t_win(self.series , wavelet = self.wave_shape, mode=self.wave_ext, width_num=3)
-            threshold = min(threshold, .001)
+            if(self.remove_corr):
+                self.r_corr_feat(self.series)
+            threshold = min(threshold, .005)
             self.mmd_score_wave = self.dynamic_windowing(p_wnd_dim, f_wnd_dim, series, threshold, alpha, kernel_type, 
                                                     approx_type, B1, B2, B3, weights_type, l_minus, l_plus, wavelet=self.wavelet)
             self.corr_score_wave= self.TVGL_(series=self.series, alpha = self.alpha_, beta =self.beta, penalty_type=self.penalty_type,

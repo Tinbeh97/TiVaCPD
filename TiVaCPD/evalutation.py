@@ -22,6 +22,7 @@ import warnings
 from scipy.signal import peak_prominences
 from pyampd.ampd import find_peaks, find_peaks_adaptive
 import ruptures as rpt
+import itertools, random
 
 def save_data(path, array):
     with open(path,'wb') as f:
@@ -164,12 +165,12 @@ def main():
     #https://github.com/WillKoehrsen/hyperparameter-optimization/blob/master/Kaggle%20Version%20of%20Bayesian%20Hyperparameter%20Optimization%20of%20GBM.ipynb
     f1_list = []
     for ind in random_index: 
-        threshold = list(hp_params['threshold'])[ind[0]]
-        slice_size = list(hp_params['slice_size'])[ind[1]]
-        alpha_ = list(hp_params['alpha_'])[ind[2]]
-        beta = list(hp_params['beta'])[ind[3]]
-        wave_shape = list(hp_params['wave_shape'])[ind[4]]
-        wave_ext = list(hp_params['wave_ext'])[ind[5]]
+        threshold = list(hyp_params['threshold'])[ind[0]]
+        slice_size = list(hyp_params['slice_size'])[ind[1]]
+        alpha_ = list(hyp_params['alpha_'])[ind[2]]
+        beta = list(hyp_params['beta'])[ind[3]]
+        wave_shape = list(hyp_params['wave_shape'])[ind[4]]
+        wave_ext = list(hyp_params['wave_ext'])[ind[5]]
         for i, X in enumerate(len(x_train)):
             print(i)
             y_true = y_train[i]
@@ -186,9 +187,22 @@ def main():
                 minLength = min(len(mmd_score), len(corr_score)) 
                 corr_score = (corr_score)[:minLength]
                 mmd_score = mmd_score[:minLength] 
-                combined_score = np.add(abs(mmd_score), abs(corr_score)) 
                 y_true = y_true[:minLength]
-                metrics = ComputeMetrics(y_true, combined_score, args.margin)
+
+                mmd_score_nor = stats.zscore(mmd_score)
+                corr_score_nor = stats.zscore(corr_score)
+                q3, q1 = np.percentile(corr_score_nor, [75 ,25])
+                corr_iqr = q3 - q1
+                corr_vote = (corr_score_nor < (1.5 * corr_iqr))
+                corr_score_nor = corr_score_nor * corr_vote.astype(int)
+
+                mmd_score_savgol  = mmd_score  
+                corr_score_savgol = savgol_filter(corr_score, 7, 1)
+                combined_score_savgol  = savgol_filter(np.add(abs(mmd_score_savgol), abs(corr_score_savgol)), 11,   1) 
+
+                all_scores = [mmd_score_nor, corr_score_nor, corr_score_savgol, combined_score_savgol]
+            
+                metrics = ComputeMetrics(y_true, all_scores, args.margin)
                 f1_score = np.round(metrics.f1,2)
                 f1_scores.append(f1_score)
 
@@ -199,8 +213,10 @@ def main():
             best_params = [threshold, slice_size, alpha_, beta, wave_shape, wave_ext]
 
     threshold, slice_size, alpha_, beta, wave_shape, wave_ext = best_params
-
-    for i in range(0, len(X_test)):
+    print('best params: ', best_params)
+    print('f1 scores: ', f1_list)
+    """
+    for i in range(0, len(x_test)):
         print(i)
         if args.model_type == 'MMDATVGL_CPD':
             
@@ -315,233 +331,8 @@ def main():
             plt.clf()
 
             print(args.data_type, args.model_type, args.exp, args.score_type)
-
-        elif args.model_type == 'GRAPHTIME_CPD':
-            X = X_samples[i]
-            y_true = y_true_samples[i]
-            model = GRAPHTIME_CPD(series = X, p_wnd_dim=args.p_wnd_dim, f_wnd_dim=args.f_wnd_dim, max_iter = 500)
-            y_pred = np.zeros((len(y_true)))
-            for j in range(len(y_true)):
-                if j in model.cps:
-                    y_pred[j] = 1 
-                else:
-                    y_pred[j] = 0
-            
-            metrics = ComputeMetrics(y_true, y_pred, args.margin, args.threshold, process=False)
-            auc_scores.append(metrics.auc)
-            f1_scores.append(metrics.f1) 
-            precision_scores.append(metrics.precision)
-            recall_scores.append(metrics.recall)
-            peaks = metrics.peaks
-            print("AUC:",np.round(metrics.auc, 2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
-            
-            plt.figure(figsize= (30,3))
-            plt.plot(X)
-            plt.plot(y_true, label = 'y_true')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['X_', str(i), '.png'])))
-            plt.clf()
-
-            plt.figure(figsize= (30,3))
-            plt.plot(y_pred, label = 'graphtime')
-            plt.plot(y_true, label = 'y_true')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['GRAPHTIME_score_', str(i), '.png'])))
-            plt.clf()
-
-
-            plt.figure(figsize= (30,3))
-            plt.plot(y_true, label = 'y_true')
-            plt.plot(peaks, label = 'peaks')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['GRAPHTIME_peaks_', str(i), '.png'])))
-            plt.clf()
-
-            data_path = os.path.join(args.out_path, args.exp)
-            if not os.path.exists(args.out_path): 
-                os.mkdir(args.out_path)
-            if not os.path.exists(data_path): 
-                os.mkdir(data_path)
-
-            save_data(os.path.join(data_path, ''.join(['graphtime_score_', str(i), '.pkl'])), y_pred)
-            
-
-        elif args.model_type == 'KLCPD':
-            X = X_samples[i]
-            y_true = y_true_samples[i]
-            model = KLCPD(X, p_wnd_dim=args.p_wnd_dim, f_wnd_dim=args.f_wnd_dim, epochs=20)
-            y_pred = model.scores
-
-            metrics = ComputeMetrics(y_true, y_pred, args.margin, args.threshold, model_type='KLCPD')
-            auc_scores.append(metrics.auc)
-            f1_scores.append(metrics.f1)
-            precision_scores.append(metrics.precision)
-            recall_scores.append(metrics.recall)
-            peaks=metrics.peaks
-
-            print("AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
-
-            plt.figure(figsize= (30,3))
-            plt.plot(X)
-            plt.plot(y_true, label = 'y_true')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['X_', str(i), '.png'])))
-            plt.clf()
-
-            plt.figure(figsize= (30,3))
-            plt.plot(y_pred, label = 'KLCPD')
-            plt.plot(y_true, label = 'y_true')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['KLCPD_score_', str(i), '.png'])))
-            plt.clf()
-            
-            plt.figure(figsize= (30,3))
-            plt.plot(y_true, label = 'y_true')
-            plt.plot(peaks, label = 'peaks')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['KLCPD_peaks_', str(i), '.png'])))
-            plt.clf()
-
-            data_path = os.path.join(args.out_path, args.exp)
-            if not os.path.exists(args.out_path): 
-                os.mkdir(args.out_path)
-            if not os.path.exists(data_path): 
-                os.mkdir(data_path)
-
-            save_data(os.path.join(data_path, ''.join(['klcpd_score_', str(i), '.pkl'])), y_pred)
-
-        elif args.model_type == 'roerich':
-            X = X_samples[i]
-            y_true = y_true_samples[i]
-            model = roerich.OnlineNNClassifier(net='default', scaler="default", metric="KL_sym",
-                  periods=1, window_size=10, lag_size=30, step=10, n_epochs=25,
-                  lr=0.01, lam=0.0001, optimizer="Adam"
-                 )
-            y_pred, _ = model.predict(X)
-            metrics = ComputeMetrics(y_true, y_pred, args.margin, args.threshold)
-            auc_scores.append(metrics.auc)
-            f1_scores.append(metrics.f1) 
-            precision_scores.append(metrics.precision)
-            recall_scores.append(metrics.recall)
-            peaks =metrics.peaks
-            print("AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
-
-            plt.figure(figsize= (30,3))
-            plt.plot(X)
-            plt.plot(y_true, label = 'y_true')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['X_', str(i), '.png'])))
-            plt.clf()
-
-            plt.figure(figsize= (30,3))
-            plt.plot(y_pred, label = 'roerich')
-            plt.plot(y_true, label = 'y_true')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['roerich_score_', str(i), '.png'])))
-            plt.clf()
-
-
-            plt.figure(figsize= (30,3))
-            plt.plot(y_true, label = 'y_true')
-            plt.plot(peaks, label = 'peaks')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['roerich_peaks_', str(i), '.png'])))
-            plt.clf()
-
-            data_path = os.path.join(args.out_path, args.exp)
-            if not os.path.exists(args.out_path): 
-                os.mkdir(args.out_path)
-            if not os.path.exists(data_path): 
-                os.mkdir(data_path)
-
-            save_data(os.path.join(data_path, ''.join(['roerich_score_', str(i), '.pkl'])), y_pred)
-
-        elif args.model_type == 'ruptures':
-            X = X_samples[i]
-
-            n_samples = X.shape[0]
-            algo = rpt.Pelt(model="rbf").fit(X)
-            result = algo.predict(pen=10)
-
-            y_pred=np.zeros(X.shape[0]+1)
-            y_pred[result] = 1
-
-
-            y_true = y_true_samples[i]
-
-            metrics = ComputeMetrics(y_true, y_pred, args.margin, args.threshold)
-            auc_scores.append(metrics.auc)
-            f1_scores.append(metrics.f1) 
-            precision_scores.append(metrics.precision)
-            recall_scores.append(metrics.recall)
-            peaks = metrics.peaks
-            print("AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
-
-            plt.figure(figsize= (30,3))
-            plt.plot(X)
-            plt.plot(y_true, label = 'y_true')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['X_', str(i), '.png'])))
-            plt.clf()
-
-            plt.figure(figsize= (30,3))
-            plt.plot(y_true, label = 'y_true')
-            plt.plot(y_pred, label = 'y_pred')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['ruptures_score_', str(i), '.png'])))
-            plt.clf()
-
-            plt.figure(figsize= (30,3))
-            plt.plot(y_true, label = 'y_true')
-            plt.plot(peaks, label = 'peaks')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['ruptures_peaks_', str(i), '.png'])))
-            plt.clf()
-
-            data_path = os.path.join(args.out_path, args.exp)
-            if not os.path.exists(args.out_path): 
-                os.mkdir(args.out_path)
-            if not os.path.exists(data_path): 
-                os.mkdir(data_path)
-
-            save_data(os.path.join(data_path, ''.join(['ruptures_score_', str(i), '.pkl'])), y_pred)
-
+    #"""
     
-
-    if args.model_type == 'MMDATVGL_CPD':
-        print("auc_scores_combined_CI", mean_confidence_interval(auc_scores_combined))
-        print("f1_scores_combined_CI", mean_confidence_interval(f1_scores_combined))
-        print("precision_scores_combined_CI", mean_confidence_interval(precision_scores_combined))
-        print("recall_scores_combined_CI", mean_confidence_interval(recall_scores_combined))
-
-        print("auc_scores_correlation_CI", mean_confidence_interval(auc_scores_correlation))
-        print("f1_scores_correlation_CI", mean_confidence_interval(f1_scores_correlation))
-        print("precision_scores_correlation_CI", mean_confidence_interval(precision_scores_correlation))
-        print("recall_scores_correlation_CI", mean_confidence_interval(recall_scores_correlation))
-
-        print("auc_scores_mmdagg_CI", mean_confidence_interval(auc_scores_mmdagg))
-        print("f1_scores_mmdagg_CI", mean_confidence_interval(f1_scores_mmdagg))
-        print("precision_scores_mmdagg_CI", mean_confidence_interval(precision_scores_mmdagg))
-        print("recall_scores_mmdagg_CI", mean_confidence_interval(recall_scores_mmdagg))
-    else:
-        print(args.data_type, args.model_type, args.exp)
-        print("auc_CI", mean_confidence_interval(auc_scores))
-        print("f1_CI", mean_confidence_interval(f1_scores))
-        print("precision_CI", mean_confidence_interval(precision_scores))
-        print("recall_CI", mean_confidence_interval(recall_scores))
-
 
 if __name__=='__main__':
 

@@ -177,10 +177,24 @@ def main():
             print('offset value: ', model.offset)
             
             minLength = min(len(mmd_score), len(corr_score)) 
+            if(args.wavelet):
+                minLength_wav = min(len(mmd_score_wave), len(corr_score_wave))
+                print('min lengths: ',minLength_wav, minLength)
+                minLength = min(minLength, minLength_wav)
+                mmd_score_wave = mmd_score_wave[:minLength] 
+                corr_score_wave = corr_score_wave[:minLength] 
+                
             corr_score = (corr_score)[:minLength]
             mmd_score = mmd_score[:minLength] 
             combined_score = np.add(abs(mmd_score), abs(corr_score)) 
             y_true = y_true[:minLength]
+
+            if(args.wavelet):
+                minLength_wav = min(len(mmd_score_wave), len(corr_score_wave))
+                print(minLength_wav, minLength)
+                mmd_score_wave = mmd_score_wave[:minLength] 
+                corr_score_wave = corr_score_wave[:minLength] 
+
 
             # processed combined score
 
@@ -212,11 +226,15 @@ def main():
             if(args.wavelet):
                 mmd_score_wave_nor = stats.zscore(mmd_score_wave)
                 corr_score_wave_nor = stats.zscore(corr_score_wave)
+                print('here: ', corr_score_wave_nor.shape)
                 q3, q1 = np.percentile(corr_score_wave_nor, [75 ,25])
-                corr_vote = (corr_score_wave_nor < (1.5 * (q3 - q1)))
+                corr_iqr = q3 - q1
+                corr_vote = (corr_score_wave_nor < (1.5 * corr_iqr))
                 corr_score_wave_nor = corr_score_wave_nor * corr_vote.astype(int)
                 all_scores.append(mmd_score_wave_nor)
                 all_scores.append(corr_score_wave_nor)
+                print('there: ', corr_score_wave_nor.shape)
+
             
             w_corr = True
             all_scores = np.transpose(np.array(all_scores))

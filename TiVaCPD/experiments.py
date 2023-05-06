@@ -215,8 +215,8 @@ def main():
                 q3, q1 = np.percentile(corr_score_wave_nor, [75 ,25])
                 corr_vote = (corr_score_wave_nor < (1.5 * (q3 - q1)))
                 corr_score_wave_nor = corr_score_wave_nor * corr_vote.astype(int)
-                all_scores = all_scores.append(mmd_score_wave_nor)
-                all_scores = all_scores.append(corr_score_wave_nor)
+                all_scores.append(mmd_score_wave_nor)
+                all_scores.append(corr_score_wave_nor)
             
             w_corr = True
             all_scores = np.transpose(np.array(all_scores))

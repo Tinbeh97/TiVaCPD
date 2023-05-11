@@ -206,11 +206,11 @@ def main():
             combined_score_savgol  = savgol_filter(np.add(abs(mmd_score_savgol), abs(corr_score_savgol)), 11,   1) 
 
             if not np.all((combined_score_savgol == 0)):
-                combined_score_savgol /= np.max(np.abs(combined_score_savgol),axis=1) #changed form axis=0
+                combined_score_savgol /= np.max(np.abs(combined_score_savgol),axis=0) 
             #"""
-            mmd_score_nor = stats.zscore(mmd_score, axis=1)
+            mmd_score_nor = stats.zscore(mmd_score, axis=0)
             #mmd_score_nor = (mmd_score_nor - np.min(mmd_score_nor)) / (np.max(mmd_score_nor) - np.min(mmd_score_nor))
-            corr_score_nor = stats.zscore(corr_score, axis=1)
+            corr_score_nor = stats.zscore(corr_score, axis=0)
             
             q3, q1 = np.percentile(corr_score_nor, [75 ,25])
             corr_iqr = q3 - q1
@@ -221,7 +221,7 @@ def main():
             print('all score shape: ', np.array(all_scores).shape)
 
             if(args.wavelet):
-                mmd_score_wave_nor = stats.zscore(mmd_score_wave, axis=1)
+                mmd_score_wave_nor = stats.zscore(mmd_score_wave, axis=0)
                 """
                 corr_score_wave_nor = stats.zscore(corr_score_wave, axis=1)
                 q3, q1 = np.percentile(corr_score_wave_nor, [75 ,25])
@@ -243,10 +243,9 @@ def main():
             else:
                 if(w_corr):
                     W = np.cov(all_scores.T)
-                    #W = np.sum(W , axis = 0)
-                    print('weight W: ', np.sum(W , axis = 0))
-                    final_score = np.einsum('ij, ij -> i', all_scores, W) 
-                    final_score = final_score / sum(W, axis=1)
+                    W = np.sum(W , axis = 0)
+                    print('weight W: ', W)
+                    final_score = final_score / sum(W)
                     #final_score = np.dot(all_scores, W) / sum(W)
                     y_pred = final_score
                     metrics= ComputeMetrics(y_true, y_pred, args.margin)

@@ -221,7 +221,7 @@ def windowed_ensemble(all_scores, window_size=7, w_corr=True):
         scores = all_scores[i:upper_index]
         if(w_corr):
             W = np.cov(scores.T)
-            #W = np.sum(W , axis = 0)
+            W = np.sum(W , axis = 0)
             #print('weight W: ', W)
         else:
             score_num = scores.shape[1]
@@ -233,8 +233,6 @@ def windowed_ensemble(all_scores, window_size=7, w_corr=True):
             W = np.sum(D, axis = 0)
             #print('weight D: ', W)
         scores2 = list(np.dot(scores, W) / sum(W))
-        scores2 = np.einsum('ij, ij -> i', all_scores, W) 
-        scores2 = list(scores2 / sum(W, axis=1))
         if(i==0):
             final_score = np.array(scores2)
         else:

@@ -364,7 +364,7 @@ class MMDA_CPD():
 
         # Min-max 
         if not np.all((mmd_agg == 0)):
-            mmd_agg /= np.max(np.abs(mmd_agg),axis=1) #changed from axis=0
+            mmd_agg /= np.max(np.abs(mmd_agg),axis=0) #changed from axis=0
         
         mmd_agg = np.concatenate((np.zeros(p_wnd_dim), mmd_agg))
         if len(mmd_agg)<len(series):
@@ -452,7 +452,7 @@ class MMDATVGL_CPD():
         #    self.threshold, self.slice_size, self.alpha_, self.beta = [0.2, 10, 5, 12]
 
         if(wavelet):
-            self.series = preprocessing.normalize(self.series, axis=1)
+            self.series = preprocessing.normalize(self.series, axis=0)
             self.series = wave_f.wavelet_t_win(self.series , wavelet = self.wave_shape, mode=self.wave_ext, width_num=3)
             threshold = min(threshold, .05)
             
@@ -469,7 +469,7 @@ class MMDATVGL_CPD():
        
         
     def r_corr_feat(self, X, thresh=.9, print_corr_matrix=False):
-        X_ = stats.zscore(X, axis=1)
+        X_ = stats.zscore(X, axis=0)
         #X = (X - np.min(X))/(np.max(X) - np.min(X))
         print('shape X: ', X_.shape)
         S = np.cov(X_.T)
@@ -528,7 +528,7 @@ class MMDATVGL_CPD():
 
         # Min-max 
         if not np.all((mmd_agg == 0)):
-            mmd_agg /= np.max(np.abs(mmd_agg),axis=1) #changed from axis=0
+            mmd_agg /= np.max(np.abs(mmd_agg),axis=0) 
         
         mmd_agg = np.concatenate((np.zeros(p_wnd_dim), mmd_agg))
         if len(mmd_agg)<len(series):
@@ -679,8 +679,7 @@ class MMDATVGL_CPD():
         
         # Min-max scaling 
         if not np.all((corr_score == 0)):
-            corr_score /= np.max(np.abs(corr_score),axis=1) #changed from axis=0
-        
+            corr_score /= np.max(np.abs(corr_score),axis=0)
         return corr_score
 
 

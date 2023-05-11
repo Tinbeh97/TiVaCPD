@@ -106,7 +106,7 @@ class ComputeMetrics():
                 y_pred[0:5] = 0 
                 y_pred[len(y_pred)-5:len(y_pred)] = 0
 
-        # given ground truth sequence of labels, and real labels, computes precision, recall and f1 score assuming leniancy of (window)
+        # given ground truth sequence of labels, and real labels, computes precision, recall and f1 score assuming leniency of (window)
         l = len(y_true)
         window = int(window)
         # Compute precision
@@ -216,22 +216,28 @@ def shift(arr, shift):
     return m_arr.filled(0)
 
 def windowed_ensemble(all_scores, window_size=7, w_corr=True):
-    final_score = []
-    for i in range(np.ceil(len(all_scores)/window_size)):
-        upper_index = min((i+1)*window_size, len(all_scores))
+    for i in range(0, len(all_scores), window_size):
+        upper_index = min(i+window_size, len(all_scores))
         scores = all_scores[i:upper_index]
         if(w_corr):
             W = np.cov(scores.T)
-            W = np.sum(W , axis = 0)
+            #W = np.sum(W , axis = 0)
+            #print('weight W: ', W)
         else:
             score_num = scores.shape[1]
             D = np.zeros((score_num,score_num))
             for i in range(score_num):
                 for j in range(i+1, score_num):
-                    D[i,j] =  np.mean(abs(all_scores[:,i] - all_scores[:,j]))
+                    D[i,j] =  np.mean(abs(scores[:,i] - scores[:,j]))
                     D[j,i] = D[i,j]
-                    #D[i,j] =  np.mean(abs(all_scores[i] - np.mean(all_scores[j])))
             W = np.sum(D, axis = 0)
-        scores = np.dot(scores, W) / sum(W)
-        final_score.append(scores)
-    return np.array(final_score)
+            #print('weight D: ', W)
+        scores2 = list(np.dot(scores, W) / sum(W))
+        scores2 = np.einsum('ij, ij -> i', all_scores, W) 
+        scores2 = list(scores2 / sum(W, axis=1))
+        if(i==0):
+            final_score = np.array(scores2)
+        else:
+            final_score = np.append(final_score, scores2)
+        
+    return final_score.reshape(-1)

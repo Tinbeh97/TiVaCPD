@@ -28,21 +28,6 @@ def save_data(path, array):
     with open(path,'wb') as f:
         pkl.dump(array, f)
 
-def peak_prominences_(distances):
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore")
-        all_peak_prom = peak_prominences(distances, range(len(distances)))
-    return all_peak_prom
-
-def post_processing(score, threshold):
-        score_peaks = peak_prominences_(np.array(score))[0]
-        for j in range(len(score_peaks)):
-            if peak_prominences_(np.array(score))[0][j] - peak_prominences_(np.array(score))[0][j-1] >threshold :
-                score_peaks[j] = 1
-            else:
-                score_peaks[j] = 0
-        return score_peaks
-
 def main():
 
     # load the data
@@ -146,15 +131,21 @@ def main():
         comb = [list(np.arange(3)),list(np.arange(3)),list(np.arange(3)),list(np.arange(3))]
     
     best_dev_f1_score = 0
-    grid_index = list(itertools.product(*comb))
-    random_index = random.choices(grid_index, k=20)
+
+    hyp_search = 'random' #'random', 'grid'
+    if hyp_search == 'random':
+        grid_index = list(itertools.product(*comb))
+        grid_index = random.choices(grid_index, k=20)
+    else:
+        grid_index = list(itertools.product(*comb))
+
     #params = {key: random.sample(value, 1)[0] for key, value in hyp_params.items()}
     #For bayesian optimization
     #https://towardsdatascience.com/a-conceptual-explanation-of-bayesian-model-based-hyperparameter-optimization-for-machine-learning-b8172278050f
     #https://github.com/WillKoehrsen/hyperparameter-optimization/blob/master/Kaggle%20Version%20of%20Bayesian%20Hyperparameter%20Optimization%20of%20GBM.ipynb
     f1_list = []
     print('length data for hyp tuning: ', len(x_train))
-    for ind in random_index: 
+    for ind in grid_index: 
         print('rand indices: ', ind)
         threshold = list(hyp_params['threshold'])[ind[0]]
         slice_size = list(hyp_params['slice_size'])[ind[1]]
@@ -207,7 +198,9 @@ def main():
                         D[j,i] = D[i,j]
                 W = np.sum(D, axis = 0) 
                 print('weight D: ', W)
-            final_score = np.dot(all_scores, W) / sum(W)
+            #final_score = np.dot(all_scores, W) / sum(W)
+
+            final_score = combined_score_savgol
         
             metrics = ComputeMetrics(y_true, final_score, args.margin)
             f1_score = np.round(metrics.f1,2)
@@ -218,9 +211,13 @@ def main():
         f1_list.append(f1_scores)
         if f1_scores > best_dev_f1_score:
             best_dev_f1_score = f1_scores
-            best_params = [threshold, slice_size, alpha_, beta, wave_shape, wave_ext]
+            if(args.wavelet):
+                best_params = [threshold, slice_size, alpha_, beta, wave_shape, wave_ext]
+            else:
+                best_params = [threshold, slice_size, alpha_, beta]
 
-    threshold, slice_size, alpha_, beta, wave_shape, wave_ext = best_params
+
+    #threshold, slice_size, alpha_, beta, wave_shape, wave_ext = best_params
     print('f1 scores: ', f1_list)
     print(mean_confidence_interval(f1_list))
     print('best params: ', best_params)

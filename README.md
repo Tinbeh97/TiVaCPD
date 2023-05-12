@@ -17,6 +17,9 @@ git clone git@github.com:
 
 This represetory contains the codes for previous work.
 
+## Datasets 
+6 dataset - 3 simulated and 3 real world data 
+
 ## TiVaCPD training 
 
 ```

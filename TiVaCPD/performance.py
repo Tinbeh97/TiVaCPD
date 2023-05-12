@@ -216,9 +216,9 @@ def shift(arr, shift):
     return m_arr.filled(0)
 
 def windowed_ensemble(all_scores, window_size=7, w_corr=True):
-    for i in range(0, len(all_scores), window_size):
-        upper_index = min(i+window_size, len(all_scores))
-        scores = all_scores[i:upper_index]
+    for n in range(0, len(all_scores), window_size):
+        upper_index = min(n+window_size, len(all_scores))
+        scores = all_scores[n:upper_index]
         if(w_corr):
             W = np.cov(scores.T)
             W = np.sum(W , axis = 0)
@@ -233,7 +233,7 @@ def windowed_ensemble(all_scores, window_size=7, w_corr=True):
             W = np.sum(D, axis = 0)
             #print('weight D: ', W)
         scores2 = list(np.dot(scores, W) / sum(W))
-        if(i==0):
+        if(n==0):
             final_score = np.array(scores2)
         else:
             final_score = np.append(final_score, scores2)

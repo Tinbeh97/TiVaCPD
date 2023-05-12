@@ -146,11 +146,13 @@ def main():
     f1_list = []
     print('length data for hyp tuning: ', len(x_train))
     for ind in grid_index: 
+        ind = list(ind)
         print('rand indices: ', ind)
         threshold = list(hyp_params['threshold'])[ind[0]]
         slice_size = list(hyp_params['slice_size'])[ind[1]]
         alpha_ = list(hyp_params['alpha_'])[ind[2]]
         beta = list(hyp_params['beta'])[ind[3]]
+        print(threshold, slice_size, alpha_, beta)
         if(args.wavelet):
             wave_shape = list(hyp_params['wave_shape'])[ind[4]]
             wave_ext = list(hyp_params['wave_ext'])[ind[5]]

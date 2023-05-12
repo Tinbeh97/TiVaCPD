@@ -233,7 +233,7 @@ def main():
                 #all_scores.append(corr_score_wave_nor)
 
             
-            w_corr = True
+            w_corr = False
             all_scores = np.transpose(np.array(all_scores))
             print('all score shape: ', all_scores.shape)
 

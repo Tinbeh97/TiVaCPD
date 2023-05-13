@@ -117,6 +117,24 @@ def main():
             y_true[0] = 0
             X_samples.append(X)
             y_true_samples.append(y_true)
+
+    if args.data_type in ['OCCUPANCY', 'occupancy']:
+        data_path = os.path.join(args.data_path)
+        n_samples = len(fnmatch.filter(os.listdir(data_path),'occupancy_X_*'))
+        X_samples = []
+        y_true_samples = []
+        for i in range(n_samples):
+            X, y_true = load_occupancy(data_path, i)
+            y_true_spike = y_true.copy()
+            for j in range(len(y_true)):
+                if y_true[j] != y_true[j-1]:
+                    y_true_spike[j] = 1
+                else:
+                    y_true_spike[j] = 0
+            y_true = y_true_spike
+            y_true[0] = 0
+            X_samples.append(X)
+            y_true_samples.append(y_true)
             
     # results path
     if not os.path.exists(os.path.join(args.out_path)):

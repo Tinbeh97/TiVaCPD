@@ -19,6 +19,8 @@ This represetory contains the codes for previous work.
 
 ## Datasets 
 6 dataset - 3 simulated and 3 real world data 
+simulate.py is for simulating data -> Jumping Mean, changing_variance, changing correlation
+simulate2.py -> Arbitrary CPs
 
 ## TiVaCPD training 
 

@@ -445,13 +445,17 @@ class MMDATVGL_CPD():
         self.wave_shape = wave_shape #'gaus1-5'
         self.wave_ext = wave_ext #'periodic'
         self.remove_corr = True
-        
+        #"""
         if data_type in ['beewaggle', 'beedance']:
-            self.threshold, self.slice_size, self.alpha_, self.beta = [0.002, 5, 1, 12]
+            self.threshold, self.slice_size, self.alpha_, self.beta = [0.002, 5, 0.4, 0.4]
+        #[0.002, 5, 1, 12]
         # [0.2, 14, 5, 0.4] #0.4
+        #"""
+        """
         if data_type in ['HAR', 'har']:
             self.threshold, self.slice_size, self.alpha_, self.beta = [0.002, 5, 5, 6]
         # [0.2, 10, 5, 12]
+        #"""
 
         if(wavelet):
             self.series = preprocessing.normalize(self.series, axis=0)

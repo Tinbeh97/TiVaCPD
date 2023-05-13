@@ -1,15 +1,13 @@
 python3 run.py --data_path ./data/HAR --exp HAR --prefix HAR_X
 python3 run.py --data_path ./data/HAR_new --exp HAR --model_type MMDATVGL_CPD --prefix HAR_X --penalty_type L1
 
-srun -p gpu python3 experiments.py --data_path ./data/HAR_new --exp HAR --model_type MMDATVGL_CPD --data_type HAR --penalty_type L2 --ensemble_win True
---wavelet True
-srun -p cpu -c 1 python3 experiments.py --data_path ./data/beedance --exp beedance --model_type MMDATVGL_CPD --data_type beedance --penalty_type L2 --ensemble_win True
-#--mem=2G
-
 salloc --partition=t4v2,rtx6000 --nodes=1 --ntasks=1 --gres=gpu:1 --mem=8G --time=8:00:00
 salloc --nodes=1 --ntasks=1 --gres=gpu:1 --mem=8G --time=11:00:00
 
+srun -p gpu python3 experiments.py --data_path ./data/HAR_new --exp HAR --model_type MMDATVGL_CPD --data_type HAR --penalty_type L2 --ensemble_win True
+--wavelet True
 srun -p gpu python3 experiments.py --data_path ./data/beedance --exp beedance --model_type MMDATVGL_CPD --data_type beedance --penalty_type L2 --ensemble_win True
+srun -p gpu python3 experiments.py --data_path ./data/occupancy --exp occupancy --model_type MMDATVGL_CPD --data_type occupancy --penalty_type L2 --ensemble_win True
 
 srun -p gpu python3 hyp_tune.py --data_path ./data/beedance --exp beedance --model_type MMDATVGL_CPD --data_type beedance --penalty_type L2
 srun -p gpu python3 hyp_tune.py --data_path ./data/HAR_new --exp HAR --model_type MMDATVGL_CPD --data_type HAR --penalty_type L2

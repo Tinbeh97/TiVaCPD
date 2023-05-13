@@ -135,7 +135,7 @@ def main():
     hyp_search = 'random' #'random', 'grid'
     if hyp_search == 'random':
         grid_index = list(itertools.product(*comb))
-        grid_index = random.choices(grid_index, k=20)
+        grid_index = random.choices(grid_index, k=12)
     else:
         grid_index = list(itertools.product(*comb))
 
@@ -186,23 +186,27 @@ def main():
             all_scores = [mmd_score_nor, corr_score_nor, corr_score_savgol, combined_score_savgol]
             all_scores = np.transpose(np.array(all_scores))
 
-            w_corr = True
-            if(w_corr):
-                W = np.cov(all_scores.T)
-                W = np.sum(W , axis = 0)
-                print('weight W: ', W)
+            w_corr = False 
+            ensemble_win = True
+            if(ensemble_win):
+                final_score = windowed_ensemble(all_scores, window_size=28, w_corr=w_corr)
             else:
-                score_num = all_scores.shape[1]
-                D = np.zeros((score_num,score_num))
-                for i in range(score_num):
-                    for j in range(i+1, score_num):
-                        D[i,j] =  np.mean(abs(all_scores[:,i] - all_scores[:,j]))
-                        D[j,i] = D[i,j]
-                W = np.sum(D, axis = 0) 
-                print('weight D: ', W)
-            #final_score = np.dot(all_scores, W) / sum(W)
+                if(w_corr):
+                    W = np.cov(all_scores.T)
+                    W = np.sum(W , axis = 0)
+                    print('weight W: ', W)
+                else:
+                    score_num = all_scores.shape[1]
+                    D = np.zeros((score_num,score_num))
+                    for i in range(score_num):
+                        for j in range(i+1, score_num):
+                            D[i,j] =  np.mean(abs(all_scores[:,i] - all_scores[:,j]))
+                            D[j,i] = D[i,j]
+                    W = np.sum(D, axis = 0) 
+                    print('weight D: ', W)
+                final_score = np.dot(all_scores, W) / sum(W)
 
-            final_score = combined_score_savgol
+            #final_score = combined_score_savgol
         
             metrics = ComputeMetrics(y_true, final_score, args.margin)
             f1_score = np.round(metrics.f1,2)

@@ -126,9 +126,9 @@ def main():
         best_params = [.2, 10, 0.4, 0.4, 'mexh','smooth']
         comb = [list(np.arange(3)),list(np.arange(3)),list(np.arange(3)),list(np.arange(3)), list(np.arange(4)), list(np.arange(2))]
     else:
-        hyp_params = {'threshold':[.2,.02,.002],'slice_size':[14, 10, 5],'alpha_':[5, 1, 0.4],'beta':[12, 6, 0.4]}
-        best_params = [.2, 10, 0.4, 0.4]
-        comb = [list(np.arange(3)),list(np.arange(3)),list(np.arange(3)),list(np.arange(3))]
+        hyp_params = {'threshold':[.2,.02,.002],'slice_size':[14, 10, 5],'alpha_':[5, 1, 0.4],'beta':[12, 6, 0.4], 'score_threshold':[0.1,0.05,0.01]}
+        best_params = [.2, 10, 0.4, 0.4, 0.05]
+        comb = [list(np.arange(3)),list(np.arange(3)),list(np.arange(3)),list(np.arange(3)), list(np.arange(3))]
     
     best_dev_f1_score = 0
 
@@ -152,6 +152,8 @@ def main():
         slice_size = list(hyp_params['slice_size'])[ind[1]]
         alpha_ = list(hyp_params['alpha_'])[ind[2]]
         beta = list(hyp_params['beta'])[ind[3]]
+        score_threshold = list(hyp_params['score_threshold'])[ind[4]]
+
         print(threshold, slice_size, alpha_, beta)
         if(args.wavelet):
             wave_shape = list(hyp_params['wave_shape'])[ind[4]]
@@ -208,7 +210,7 @@ def main():
 
             #final_score = combined_score_savgol
         
-            metrics = ComputeMetrics(y_true, final_score, args.margin)
+            metrics = ComputeMetrics(y_true, final_score, args.margin, threshold=score_threshold)
             f1_score = np.round(metrics.f1,2)
             print('f1 score: ', f1_score)
             f1_scores.append(f1_score)

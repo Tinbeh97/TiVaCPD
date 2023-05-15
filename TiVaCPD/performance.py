@@ -171,7 +171,8 @@ class ComputeMetrics():
         if not np.all((score==0)):
             
             score_peaks = np.zeros(shape = score.shape)
-            peaks = find_peaks_adaptive(score)
+            #peaks = find_peaks_adaptive(score)
+            peaks = find_peaks(score, height=self.threshold, distance=self.moe * 2)[0]
 
             score_peaks[peaks] = 1
             

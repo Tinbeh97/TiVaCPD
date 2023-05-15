@@ -126,7 +126,7 @@ def main():
         best_params = [.2, 10, 0.4, 0.4, 'mexh','smooth']
         comb = [list(np.arange(3)),list(np.arange(3)),list(np.arange(3)),list(np.arange(3)), list(np.arange(4)), list(np.arange(2))]
     else:
-        hyp_params = {'threshold':[.2,.02,.002],'slice_size':[14, 10, 5],'alpha_':[5, 1, 0.4],'beta':[12, 6, 0.4], 'score_threshold':[0.1,0.05,0.01]}
+        hyp_params = {'threshold':[.2,.02,.002],'slice_size':[14, 10, 5],'alpha_':[5, 1, 0.4],'beta':[12, 6, 0.4], 'score_threshold':[0.1,0.05,0.005]}
         best_params = [.2, 10, 0.4, 0.4, 0.05]
         comb = [list(np.arange(3)),list(np.arange(3)),list(np.arange(3)),list(np.arange(3)), list(np.arange(3))]
     
@@ -144,6 +144,8 @@ def main():
     #https://towardsdatascience.com/a-conceptual-explanation-of-bayesian-model-based-hyperparameter-optimization-for-machine-learning-b8172278050f
     #https://github.com/WillKoehrsen/hyperparameter-optimization/blob/master/Kaggle%20Version%20of%20Bayesian%20Hyperparameter%20Optimization%20of%20GBM.ipynb
     f1_list = []
+    x_train = x_test
+    y_train = y_test
     print('length data for hyp tuning: ', len(x_train))
     for ind in grid_index: 
         ind = list(ind)
@@ -166,7 +168,7 @@ def main():
             data_path = os.path.join(args.out_path, args.exp)
             data_path += '_'+str(args.penalty_type)
             model = MMDATVGL_CPD(X, max_iters = args.max_iters, overlap=args.overlap, alpha = 0.001, threshold = threshold, f_wnd_dim = args.f_wnd_dim, p_wnd_dim = args.p_wnd_dim, data_path = data_path, sample = i,
-                                slice_size=slice_size, alpha_=alpha_, beta=beta) 
+                                slice_size=slice_size, alpha_=alpha_, beta=beta, hyp_tuning=True) 
             mmd_score = model.mmd_score #shift(model.mmd_score, args.p_wnd_dim)
             corr_score = model.corr_score
             minLength = min(len(mmd_score), len(corr_score)) 
@@ -222,7 +224,7 @@ def main():
             if(args.wavelet):
                 best_params = [threshold, slice_size, alpha_, beta, wave_shape, wave_ext]
             else:
-                best_params = [threshold, slice_size, alpha_, beta]
+                best_params = [threshold, slice_size, alpha_, beta, score_threshold]
 
 
     #threshold, slice_size, alpha_, beta, wave_shape, wave_ext = best_params

@@ -236,7 +236,8 @@ def main():
             corr_score_nor = corr_score_nor * corr_vote.astype(int)
 
             w_corr = False
-            if((model.tvgl_iter> 200) & (model.offset> 0.01)):
+            if(False):
+            #if((model.tvgl_iter> 200) & (model.offset> 0.01)):
                 y_pred = combined_score_savgol
             else:
                 all_scores = [mmd_score_nor, corr_score_nor, corr_score_savgol, combined_score_savgol]
@@ -267,7 +268,7 @@ def main():
                         final_score = final_score / sum(W)
                         #final_score = np.dot(all_scores, W) / sum(W)
                         y_pred = final_score
-                        metrics= ComputeMetrics(y_true, y_pred, args.margin)
+                        metrics= ComputeMetrics(y_true, y_pred, args.margin, threshold = args.score_threshold)
                         print("W Weighted ensemble score:", "AUC:", np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
                     #else:
                         score_num = all_scores.shape[1]
@@ -286,7 +287,7 @@ def main():
                     final_score = np.nan_to_num(final_score)
                     print('There was nan in final score')
                 y_pred = final_score
-            metrics= ComputeMetrics(y_true, y_pred, args.margin)
+            metrics= ComputeMetrics(y_true, y_pred, args.margin, threshold = args.score_threshold)
             name_w = 'W ' if w_corr else 'D '
             print(name_w + "Weighted ensemble score:", "AUC:", np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
             final_auc_scores_combined.append(np.round(metrics.auc,3))
@@ -296,15 +297,16 @@ def main():
 
             y_pred = mmd_score_nor
             mmd_score_nor = y_pred
-            metrics = ComputeMetrics(y_true, y_pred, args.margin)
+            metrics = ComputeMetrics(y_true, y_pred, args.margin, threshold = 
+                                     args.score_threshold)
             print("Norm DistScore:", "AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
             y_pred = corr_score_nor
             corr_score_nor = y_pred
-            metrics = ComputeMetrics(y_true, y_pred, args.margin)
+            metrics = ComputeMetrics(y_true, y_pred, args.margin, threshold = args.score_threshold)
             print("Norm CorrScore:", "AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
             combined_score_nor = np.add(mmd_score_nor, corr_score_nor)
             y_pred = combined_score_nor
-            metrics= ComputeMetrics(y_true, y_pred, args.margin)
+            metrics= ComputeMetrics(y_true, y_pred, args.margin, threshold = args.score_threshold)
             print("Norm EnsembleScore:", "AUC:", np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
             #"""
 
@@ -315,15 +317,15 @@ def main():
 
         
             y_pred = mmd_score
-            metrics = ComputeMetrics(y_true, y_pred, args.margin)
+            metrics = ComputeMetrics(y_true, y_pred, args.margin, threshold = args.score_threshold)
             print("DistScore:", "AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
 
             y_pred = corr_score
-            metrics = ComputeMetrics(y_true, y_pred, args.margin)
+            metrics = ComputeMetrics(y_true, y_pred, args.margin, threshold = args.score_threshold)
             print("CorrScore:", "AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
 
             y_pred = combined_score
-            metrics= ComputeMetrics(y_true, y_pred, args.margin)
+            metrics= ComputeMetrics(y_true, y_pred, args.margin, threshold = args.score_threshold)
             print("EnsembleScore:", "AUC:", np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
 
             print("Processed:")
@@ -334,7 +336,7 @@ def main():
             print('mmd max: ', np.max(y_true), np.max(y_pred))
             print('mmd mean: ', np.mean(y_true), np.mean(y_pred))
             #"""
-            metrics = ComputeMetrics(y_true, y_pred, args.margin)
+            metrics = ComputeMetrics(y_true, y_pred, args.margin, threshold = args.score_threshold)
             auc_scores_mmdagg.append(metrics.auc)
             f1_scores_mmdagg.append(metrics.f1) 
             precision_scores_mmdagg.append(metrics.precision)
@@ -347,7 +349,7 @@ def main():
             print('corr max: ', np.max(y_true), np.max(y_pred))
             print('corr mean: ', np.mean(y_true), np.mean(y_pred))
             #"""
-            metrics = ComputeMetrics(y_true, y_pred, args.margin)
+            metrics = ComputeMetrics(y_true, y_pred, args.margin, args.score_threshold)
             auc_scores_correlation.append(metrics.auc)
             f1_scores_correlation.append(metrics.f1) 
             precision_scores_correlation.append(metrics.precision)
@@ -356,7 +358,7 @@ def main():
             
 
             y_pred = combined_score_savgol
-            metrics = ComputeMetrics(y_true, y_pred, args.margin)
+            metrics = ComputeMetrics(y_true, y_pred, args.margin, threshold = args.score_threshold)
             auc_scores_combined.append(metrics.auc)
             f1_scores_combined.append(metrics.f1)
             precision_scores_combined.append(metrics.precision)
@@ -403,7 +405,7 @@ def main():
                 else:
                     y_pred[j] = 0
             
-            metrics = ComputeMetrics(y_true, y_pred, args.margin, args.threshold, process=False)
+            metrics = ComputeMetrics(y_true, y_pred, args.margin, threshold = args.score_threshold, process=False)
             auc_scores.append(metrics.auc)
             f1_scores.append(metrics.f1) 
             precision_scores.append(metrics.precision)
@@ -451,7 +453,7 @@ def main():
             model = KLCPD(X, p_wnd_dim=args.p_wnd_dim, f_wnd_dim=args.f_wnd_dim, epochs=20)
             y_pred = model.scores
 
-            metrics = ComputeMetrics(y_true, y_pred, args.margin, args.threshold, model_type='KLCPD')
+            metrics = ComputeMetrics(y_true, y_pred, args.margin, threshold = args.score_threshold, model_type='KLCPD')
             auc_scores.append(metrics.auc)
             f1_scores.append(metrics.f1)
             precision_scores.append(metrics.precision)
@@ -500,7 +502,7 @@ def main():
                   lr=0.01, lam=0.0001, optimizer="Adam"
                  )
             y_pred, _ = model.predict(X)
-            metrics = ComputeMetrics(y_true, y_pred, args.margin, args.threshold)
+            metrics = ComputeMetrics(y_true, y_pred, args.margin, threshold = args.score_threshold)
             auc_scores.append(metrics.auc)
             f1_scores.append(metrics.f1) 
             precision_scores.append(metrics.precision)
@@ -554,7 +556,7 @@ def main():
 
             y_true = y_true_samples[i]
 
-            metrics = ComputeMetrics(y_true, y_pred, args.margin, args.threshold)
+            metrics = ComputeMetrics(y_true, y_pred, args.margin, threshold = args.score_threshold)
             auc_scores.append(metrics.auc)
             f1_scores.append(metrics.f1) 
             precision_scores.append(metrics.precision)
@@ -634,6 +636,7 @@ if __name__=='__main__':
     parser.add_argument('--max_iters', type = int, default = 500)
     parser.add_argument('--overlap', type = int, default = 1)
     parser.add_argument('--threshold', type = float, default = .2)
+    parser.add_argument('--score_threshold', type = float, default = .05)
     parser.add_argument('--f_wnd_dim', type = int, default = 10)
     parser.add_argument('--p_wnd_dim', type = int, default = 3)
     parser.add_argument('--exp', default = 'changing_correlation') # used for output path for results

@@ -395,7 +395,7 @@ class MMDATVGL_CPD():
     def __init__(self, series:np.array, p_wnd_dim:int=5, f_wnd_dim:int=10, threshold:int=.05, alpha:int=.05,
     kernel_type='gaussian', approx_type='permutation', B1:int=1000, B2:int=1000, B3:int=100, weights_type='uniform', l_minus:int=1, l_plus:int=5, 
                                         alpha_:int=0.4, beta:int=0.4, penalty_type='L1', slice_size:int=10, overlap:int=1, max_iters:int=500, data_path = '', 
-                                        sample = '', wavelet=False, wave_shape = 'mexh', wave_ext = 'smooth', data_type='HAR'):
+                                        sample = '', wavelet=False, wave_shape = 'mexh', wave_ext = 'smooth', data_type='HAR', hyp_tuning=False):
         """
         @param series - timeseries
         @param p_wnd_dim - past window size
@@ -445,18 +445,18 @@ class MMDATVGL_CPD():
         self.wave_shape = wave_shape #'gaus1-5'
         self.wave_ext = wave_ext #'periodic'
         self.remove_corr = False
-        #"""
-        if data_type in ['beewaggle', 'beedance', 'occupancy']:
-            self.threshold, self.slice_size, self.alpha_, self.beta = [0.002, 5, 0.4, 0.4]
-        #[0.002, 5, 1, 12]
-        # [0.2, 14, 5, 0.4] #0.4
-        #"""
-        #"""
-        if data_type in ['HAR', 'har']:
-            self.threshold, self.slice_size, self.alpha_, self.beta = [0.02, 5, 1, 6]
-        #[0.002, 5, 5, 6]
-        # [0.2, 10, 5, 12]
-        #"""
+        self.hyp_tuning = hyp_tuning
+
+        if(not(self.hyp_tuning)):
+            if data_type in ['beewaggle', 'beedance', 'occupancy']:
+                self.threshold, self.slice_size, self.alpha_, self.beta = [0.002, 5, 0.4, 0.4]
+            #[0.002, 5, 1, 12]
+            # [0.2, 14, 5, 0.4] #0.4
+            
+            if data_type in ['HAR', 'har']:
+                self.threshold, self.slice_size, self.alpha_, self.beta = [0.02, 5, 1, 6]
+            #[0.002, 5, 5, 6]
+            # [0.2, 10, 5, 12]
         if(data_type == 'occupancy'):
             self.series = preprocessing.normalize(self.series, axis=0)
 

@@ -444,18 +444,21 @@ class MMDATVGL_CPD():
         self.wavelet = wavelet
         self.wave_shape = wave_shape #'gaus1-5'
         self.wave_ext = wave_ext #'periodic'
-        self.remove_corr = True
+        self.remove_corr = False
         #"""
-        if data_type in ['beewaggle', 'beedance']:
+        if data_type in ['beewaggle', 'beedance', 'occupancy']:
             self.threshold, self.slice_size, self.alpha_, self.beta = [0.002, 5, 0.4, 0.4]
         #[0.002, 5, 1, 12]
         # [0.2, 14, 5, 0.4] #0.4
         #"""
-        """
+        #"""
         if data_type in ['HAR', 'har']:
-            self.threshold, self.slice_size, self.alpha_, self.beta = [0.002, 5, 5, 6]
+            self.threshold, self.slice_size, self.alpha_, self.beta = [0.02, 5, 1, 6]
+        #[0.002, 5, 5, 6]
         # [0.2, 10, 5, 12]
         #"""
+        if(data_type == 'occupancy'):
+            self.series = preprocessing.normalize(self.series, axis=0)
 
         if(wavelet):
             self.series = preprocessing.normalize(self.series, axis=0)
@@ -464,7 +467,7 @@ class MMDATVGL_CPD():
             
           #print(f'initial feature shape: {series.shape} and after transition shape: {self.series.shape}')
         if(self.remove_corr):
-            self.r_corr_feat(self.series)
+            self.series = self.r_corr_feat(self.series)
 
         self.mmd_score, self.mmd_logit = self.dynamic_windowing(p_wnd_dim, f_wnd_dim, series, self.threshold, alpha, kernel_type, 
                                                     approx_type, B1, B2, B3, weights_type, l_minus, l_plus, wavelet=self.wavelet)
@@ -580,6 +583,7 @@ class MMDATVGL_CPD():
         # set of precision matrices
         
         self.offset = model.offset
+        self.tvgl_iter = model.iter
         
         ps = model.precision_set
         col_names = []

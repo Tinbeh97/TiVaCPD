@@ -235,54 +235,57 @@ def main():
             corr_vote = (corr_score_nor < (1.5 * corr_iqr))
             corr_score_nor = corr_score_nor * corr_vote.astype(int)
 
-            all_scores = [mmd_score_nor, corr_score_nor, corr_score_savgol, combined_score_savgol]
-            print('all score shape: ', np.array(all_scores).shape)
-
-            if(args.wavelet):
-                mmd_score_wave_nor = stats.zscore(mmd_score_wave, axis=0)
-                """
-                corr_score_wave_nor = stats.zscore(corr_score_wave, axis=1)
-                q3, q1 = np.percentile(corr_score_wave_nor, [75 ,25])
-                corr_iqr = q3 - q1
-                corr_vote = (corr_score_wave_nor < (1.5 * corr_iqr))
-                corr_score_wave_nor = corr_score_wave_nor * corr_vote.astype(int)
-                #"""
-                all_scores.append(mmd_score_wave_nor)
-                #all_scores.append(corr_score_wave_nor)
-
-            
             w_corr = False
-            all_scores = np.transpose(np.array(all_scores))
-            print('all score shape: ', all_scores.shape)
-
-            if(args.ensemble_win):
-                final_score = windowed_ensemble(all_scores, window_size=28, w_corr=w_corr)
-                print(np.array(mmd_score_nor).shape, final_score.shape)
+            if((model.tvgl_iter> 200) & (model.offset> 0.01)):
+                y_pred = combined_score_savgol
             else:
-                if(w_corr):
-                    W = np.cov(all_scores.T)
-                    W = np.sum(W , axis = 0)
-                    print('weight W: ', W)
-                    final_score = final_score / sum(W)
-                    #final_score = np.dot(all_scores, W) / sum(W)
-                    y_pred = final_score
-                    metrics= ComputeMetrics(y_true, y_pred, args.margin)
-                    print("W Weighted ensemble score:", "AUC:", np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
-                #else:
-                    score_num = all_scores.shape[1]
-                    D = np.zeros((score_num,score_num))
-                    for i in range(score_num):
-                        for j in range(i+1, score_num):
-                            #D[i,j] =  np.mean(abs(all_scores[:,i] - all_scores[:,j]))
-                            D[i,j] =  np.mean(abs(all_scores[:,i] - np.mean(all_scores[:,j])))
-                            D[j,i] = D[i,j]
-                    W = np.sum(D, axis = 0) 
-                    print('weight D: ', W)
-                    final_score = np.dot(all_scores, W) / sum(W)
-            #"""
-            #"""
+                all_scores = [mmd_score_nor, corr_score_nor, corr_score_savgol, combined_score_savgol]
+                print('all score shape: ', np.array(all_scores).shape)
 
-            y_pred = final_score
+                if(args.wavelet):
+                    mmd_score_wave_nor = stats.zscore(mmd_score_wave, axis=0)
+                    """
+                    corr_score_wave_nor = stats.zscore(corr_score_wave, axis=1)
+                    q3, q1 = np.percentile(corr_score_wave_nor, [75 ,25])
+                    corr_iqr = q3 - q1
+                    corr_vote = (corr_score_wave_nor < (1.5 * corr_iqr))
+                    corr_score_wave_nor = corr_score_wave_nor * corr_vote.astype(int)
+                    #"""
+                    all_scores.append(mmd_score_wave_nor)
+                    #all_scores.append(corr_score_wave_nor)
+                all_scores = np.transpose(np.array(all_scores))
+                print('all score shape: ', all_scores.shape)
+
+                if(args.ensemble_win):
+                    final_score = windowed_ensemble(all_scores, window_size=21, w_corr=w_corr)
+                    print(np.array(mmd_score_nor).shape, final_score.shape)
+                else:
+                    if(w_corr):
+                        W = np.cov(all_scores.T)
+                        W = np.sum(W , axis = 0)
+                        print('weight W: ', W)
+                        final_score = final_score / sum(W)
+                        #final_score = np.dot(all_scores, W) / sum(W)
+                        y_pred = final_score
+                        metrics= ComputeMetrics(y_true, y_pred, args.margin)
+                        print("W Weighted ensemble score:", "AUC:", np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
+                    #else:
+                        score_num = all_scores.shape[1]
+                        D = np.zeros((score_num,score_num))
+                        for i in range(score_num):
+                            for j in range(i+1, score_num):
+                                #D[i,j] =  np.mean(abs(all_scores[:,i] - all_scores[:,j]))
+                                D[i,j] =  np.mean(abs(all_scores[:,i] - np.mean(all_scores[:,j])))
+                                D[j,i] = D[i,j]
+                        W = np.sum(D, axis = 0) 
+                        print('weight D: ', W)
+                        final_score = np.dot(all_scores, W) / sum(W)
+                #"""
+                #"""
+                if(np.isnan(final_score).any()):
+                    final_score = np.nan_to_num(final_score)
+                    print('There was nan in final score')
+                y_pred = final_score
             metrics= ComputeMetrics(y_true, y_pred, args.margin)
             name_w = 'W ' if w_corr else 'D '
             print(name_w + "Weighted ensemble score:", "AUC:", np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))

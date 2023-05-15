@@ -1,5 +1,5 @@
 import numpy as np
-from scipy import stats
+from scipy import stats, linalg
 from tvgl_penalty import soft_threshold_odd, element_wise, group_lasso, perturbed_node
 
 class TVGL():
@@ -20,7 +20,7 @@ class TVGL():
         
         self.covariance_set = gen_s(X, self.slice_size, self.overlap)
         print('gen_s finished')
-        self.precision_set, self.offset = admm(X, self.covariance_set, self.alpha, self.beta, self.penalty_type,
+        self.precision_set, self.offset, self.iter = admm(X, self.covariance_set, self.alpha, self.beta, self.penalty_type,
         self.slice_size, self.rho, self.max_iters, self.e_abs, self.e_rel)
         print('admm finished')
 
@@ -73,6 +73,16 @@ def update_theta(slice_size, S, rho, alpha, beta, theta, z0, z1, z2, u0, u1, u2)
         else:
             A = (1 / 3) * A
         d, q = np.linalg.eigh(eta_ * (1 / 2) * (A + A.T) - S[i])
+        """
+        mat = (eta_ * (1 / 2) * (A + A.T) - S[i])
+        if(np.isnan(mat).any()):
+            mat = np.nan_to_num(mat)
+            #print(A, S[i])
+        try:
+            d, q = linalg.eigh(mat)
+        except:
+            exit()
+        #"""
         d = np.diag(d)
         theta[i] = ( 1 / (2 * eta_)) * q * (d + np.sqrt(d ** 2 + 4 * eta_ * np.eye(A.shape[0]))) * q.T
 
@@ -244,4 +254,4 @@ def admm(X, S, alpha, beta, penalty_type, slice_size, rho, max_iters, e_abs, e_r
     else:
         print("num convergence iter: ", iters)
 
-    return theta, offset
+    return theta, offset, iters

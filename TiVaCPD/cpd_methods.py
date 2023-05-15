@@ -450,6 +450,8 @@ class MMDATVGL_CPD():
         if(not(self.hyp_tuning)):
             if data_type in ['beewaggle', 'beedance', 'occupancy']:
                 self.threshold, self.slice_size, self.alpha_, self.beta = [0.002, 5, 0.4, 0.4]
+                #[0.002, 5, 1, 6] # 0.005 score_threshold
+            #[0.002, 5, 0.4, 0.4]
             #[0.002, 5, 1, 12]
             # [0.2, 14, 5, 0.4] #0.4
             

@@ -144,8 +144,6 @@ def main():
     #https://towardsdatascience.com/a-conceptual-explanation-of-bayesian-model-based-hyperparameter-optimization-for-machine-learning-b8172278050f
     #https://github.com/WillKoehrsen/hyperparameter-optimization/blob/master/Kaggle%20Version%20of%20Bayesian%20Hyperparameter%20Optimization%20of%20GBM.ipynb
     f1_list = []
-    x_train = x_test
-    y_train = y_test
     print('length data for hyp tuning: ', len(x_train))
     for ind in grid_index: 
         ind = list(ind)

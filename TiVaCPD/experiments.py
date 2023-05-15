@@ -54,18 +54,18 @@ def main():
         for i in range(n_samples):
             X, gt_cor, gt_var, gt_mean = load_simulated(data_path, i)
 
-            if np.all((gt_mean== gt_mean[0])) and np.all((gt_var == gt_var[0])):
-                # cases where we have changes only in correlation
-                y_true = gt_cor
-            else:
-                y_true = abs(gt_mean) + abs(gt_var) + abs(gt_cor)
-            y_true_spike = y_true.copy()
-            for j in range(len(y_true)):
-                if y_true[j] != y_true[j-1] and j!=0:
-                    y_true_spike[j] = 1
-                else:
-                    y_true_spike[j] = 0
-            y_true = y_true_spike
+            y_true = np.zeros_like(gt_cor)
+            for j in range(len(gt_cor)):
+                if gt_cor[j] != gt_cor[j-1] and j!=0:
+                    y_true[j] += 1
+            for j in range(len(gt_mean)):
+                if gt_mean[j] != gt_mean[j-1] and j!=0:
+                    y_true[j] += 1
+            for j in range(len(gt_var)):
+                if gt_var[j] != gt_var[j-1] and j!=0:
+                    y_true[j] += 1
+            y_true[y_true >= 1] = 1
+
             X_samples.append(X)
             y_true_samples.append(y_true)
 

@@ -227,6 +227,7 @@ def main():
                 combined_score_savgol /= np.max(np.abs(combined_score_savgol),axis=0) 
             #"""
             mmd_score_nor = stats.zscore(mmd_score, axis=0)
+            corr_score_nor = stats.zscore(corr_score, axis=0)
             do_ensemble = True
             if(np.sum(np.isnan(mmd_score_nor))>=1 or np.sum(np.isnan(corr_score_nor))>=1):
                 do_ensemble = False

@@ -12,6 +12,8 @@ srun -p gpu python3 experiments.py --data_path ./data/occupancy --exp occupancy 
 srun -p gpu python3 hyp_tune.py --data_path ./data/beedance --exp beedance --model_type MMDATVGL_CPD --data_type beedance --penalty_type L2
 srun -p gpu python3 hyp_tune.py --data_path ./data/HAR_new --exp HAR --model_type MMDATVGL_CPD --data_type HAR --penalty_type L2
 
+python3 plot_data.py --data_path ./data/block_correlation --data_type block_correlation
+srun -p gpu python3 experiments.py --data_path ./data/block_correlation --exp block --model_type MMDATVGL_CPD --data_type block_correlation --penalty_type L2 --ensemble_win True
 
 ##run.py is for training 
 ##simulate.py is for simulating data -> Jumping Mean, changing_variance, changing correlation

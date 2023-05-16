@@ -54,18 +54,18 @@ def main():
         for i in range(n_samples):
             X, gt_cor, gt_var, gt_mean = load_simulated(data_path, i)
 
-            if np.all((gt_mean== gt_mean[0])) and np.all((gt_var == gt_var[0])):
-                # cases where we have changes only in correlation
-                y_true = gt_cor
-            else:
-                y_true = abs(gt_mean) + abs(gt_var) + abs(gt_cor)
-            y_true_spike = y_true.copy()
-            for j in range(len(y_true)):
-                if y_true[j] != y_true[j-1] and j!=0:
-                    y_true_spike[j] = 1
-                else:
-                    y_true_spike[j] = 0
-            y_true = y_true_spike
+            y_true = np.zeros_like(gt_cor)
+            for j in range(len(gt_cor)):
+                if gt_cor[j] != gt_cor[j-1] and j!=0:
+                    y_true[j] += 1
+            for j in range(len(gt_mean)):
+                if gt_mean[j] != gt_mean[j-1] and j!=0:
+                    y_true[j] += 1
+            for j in range(len(gt_var)):
+                if gt_var[j] != gt_var[j-1] and j!=0:
+                    y_true[j] += 1
+            y_true[y_true >= 1] = 1
+
             X_samples.append(X)
             y_true_samples.append(y_true)
 
@@ -227,16 +227,18 @@ def main():
                 combined_score_savgol /= np.max(np.abs(combined_score_savgol),axis=0) 
             #"""
             mmd_score_nor = stats.zscore(mmd_score, axis=0)
-            #mmd_score_nor = (mmd_score_nor - np.min(mmd_score_nor)) / (np.max(mmd_score_nor) - np.min(mmd_score_nor))
-            corr_score_nor = stats.zscore(corr_score, axis=0)
-            
+            do_ensemble = True
+            if(np.sum(np.isnan(mmd_score_nor))>=1 or np.sum(np.isnan(corr_score_nor))>=1):
+                do_ensemble = False
+            #"""
             q3, q1 = np.percentile(corr_score_nor, [75 ,25])
             corr_iqr = q3 - q1
             corr_vote = (corr_score_nor < (1.5 * corr_iqr))
             corr_score_nor = corr_score_nor * corr_vote.astype(int)
+            #"""
 
             w_corr = False
-            if(False):
+            if(not(do_ensemble)):
             #if((model.tvgl_iter> 200) & (model.offset> 0.01)):
                 y_pred = combined_score_savgol
             else:
@@ -257,8 +259,9 @@ def main():
                 all_scores = np.transpose(np.array(all_scores))
                 print('all score shape: ', all_scores.shape)
 
+                plot_w = False
                 if(args.ensemble_win):
-                    final_score = windowed_ensemble(all_scores, window_size=21, w_corr=w_corr)
+                    final_score = windowed_ensemble(all_scores, window_size=21, w_corr=w_corr, plot_w=plot_w)
                     print(np.array(mmd_score_nor).shape, final_score.shape)
                 else:
                     if(w_corr):
@@ -270,7 +273,7 @@ def main():
                         y_pred = final_score
                         metrics= ComputeMetrics(y_true, y_pred, args.margin, threshold = args.score_threshold)
                         print("W Weighted ensemble score:", "AUC:", np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
-                    #else:
+                    else:
                         score_num = all_scores.shape[1]
                         D = np.zeros((score_num,score_num))
                         for i in range(score_num):
@@ -278,6 +281,12 @@ def main():
                                 #D[i,j] =  np.mean(abs(all_scores[:,i] - all_scores[:,j]))
                                 D[i,j] =  np.mean(abs(all_scores[:,i] - np.mean(all_scores[:,j])))
                                 D[j,i] = D[i,j]
+                        if(plot_w):
+                            plt.figure()
+                            plt.imshow(D)
+                            plt.colorbar()
+                            plt.axis('off')
+                            plt.savefig('image_out/w_all'+'.png')
                         W = np.sum(D, axis = 0) 
                         print('weight D: ', W)
                         final_score = np.dot(all_scores, W) / sum(W)
@@ -294,7 +303,6 @@ def main():
             final_f1_scores_combined.append(np.round(metrics.f1,3))
             final_precision_scores_combined.append(np.round(metrics.precision,3))
             final_recall_scores_combined.append(np.round(metrics.recall,3))
-
             y_pred = mmd_score_nor
             mmd_score_nor = y_pred
             metrics = ComputeMetrics(y_true, y_pred, args.margin, threshold = 

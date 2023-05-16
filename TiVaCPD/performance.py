@@ -1,5 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
+import matplotlib.colors as colors
+
 import warnings
 from scipy.signal import find_peaks, peak_prominences
 from sklearn import metrics
@@ -216,7 +218,17 @@ def shift(arr, shift):
     else: m_arr[shift:] = ma.masked
     return m_arr.filled(0)
 
-def windowed_ensemble(all_scores, window_size=7, w_corr=True):
+class MidpointNormalize(colors.Normalize):
+    """Normalise the colorbar."""
+    def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+        self.midpoint = midpoint
+        colors.Normalize.__init__(self, vmin, vmax, clip)
+
+    def __call__(self, value, clip=None):
+        x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
+        return np.ma.masked_array(np.interp(value, x, y), np.isnan(value))
+    
+def windowed_ensemble(all_scores, window_size=7, w_corr=True, plot_w=False):
     for n in range(0, len(all_scores), window_size):
         upper_index = min(n+window_size, len(all_scores))
         scores = all_scores[n:upper_index]
@@ -230,8 +242,23 @@ def windowed_ensemble(all_scores, window_size=7, w_corr=True):
             for i in range(score_num):
                 for j in range(i+1, score_num):
                     D[i,j] =  np.mean(abs(scores[:,i] - scores[:,j]))
-                    D[j,i] = D[i,j]
+                    if(not(plot_w)):
+                        D[j,i] = D[i,j]
+            """
+            if(plot_w):
+                plt.figure()
+                plt.imshow(D)
+                plt.colorbar()
+                plt.axis('off')
+                plt.savefig('image_out/w_'+str(n)+'.png')
+            #"""
             W = np.sum(D, axis = 0)
+            if(plot_w):
+                plt.figure()
+                plt.imshow(np.expand_dims(W, axis=1))
+                plt.colorbar()
+                plt.axis('off')
+                plt.savefig('image_out/w_'+str(n)+'.png')
             #print('weight D: ', W)
         scores2 = list(np.dot(scores, W) / sum(W))
         if(n==0):

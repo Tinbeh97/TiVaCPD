@@ -1,5 +1,5 @@
 ### Time-Varying Correlation Networks for Interpretable Change Point Detection (TiVaCPD)
-This repo contains an official code for TiVaCPD change point detection method. The overview of the methodology is shown below [overview image](Overivew2.pdf).
+This repo contains an official code for TiVaCPD change point detection method. The overview of the methodology is shown below ![overview image](Overivew2.pdf).
 For more information on this work please read [Dynamic Interpretable Change Point Detection]().
 
 ## Prerequisites

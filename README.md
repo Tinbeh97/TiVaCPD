@@ -20,7 +20,11 @@ git clone git@github.com:
 --->
 ## Previous work
 
-This represetory contains the codes for previous work.
+This represetory contains the implementation for running the following benchmark methods.
+- Kernel Change Point Detection with Auxiliary Deep Generative Models (KLCPD) (Chang et al., 2019) [KLCPD](https://arxiv.org/abs/1901.06077)
+- Generalization of Change-Point Detection in Time Series Data Based on Direct Density Ratio Estimation (Hushchyn & Ustyuzhanin, 2021) [roerich](https://arxiv.org/abs/2001.06386)
+- Estimating dynamic graphical models from multivariate time-series data (GraphTime) (Gibberd & Nelson, 2015) [GRAPHTIME_CPD](https://ceur-ws.org/Vol-1425/paper9.pdf)
+- Change Point Detection in Time Series Data using Autoencoders with a Time-Invariant Representation (TIRE) De Ryck et al. (2021) [ruptures](https://arxiv.org/abs/2008.09524)
 
 ## Datasets 
 6 dataset - 3 simulated and 3 real world data 

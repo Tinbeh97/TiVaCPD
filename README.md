@@ -27,11 +27,20 @@ This represetory contains the implementation for running the following benchmark
 - Change Point Detection in Time Series Data using Autoencoders with a Time-Invariant Representation (TIRE) De Ryck et al. (2021) [ruptures](https://arxiv.org/abs/2008.09524)
 
 ## Datasets 
-6 dataset - 3 simulated and 3 real world data 
+The TiVACPD method was tested on 4 simulated datasets and 2 real world datasets. All datasets can be found in the [data](./TiVaCPD/data) folder.
+For generating the simulated datasets use the following commands:
+- For Jumping Mean, changing_variance, and changing correlation CPs
+```
+python3 simulate.py --path saving_path --constant_mean --constant_var --constant_corr
+```
+- For Arbitrary CPs
+```
+python3 simulate2.py --path saving_path
+```
 
-Occupancy detection dataset {link}(https://archive.ics.uci.edu/ml/datasets/Occupancy+Detection+#)
-simulate.py is for simulating data -> Jumping Mean, changing_variance, changing correlation
-simulate2.py -> Arbitrary CPs
+The real-life datasets can be found here:
+- Beedance dataset
+- Human activity recognition (HAR) dataset [link](https://paperswithcode.com/dataset/har)
 ## Hyperparameters tuning 
 ```
 python3 hyp_tune.py --data_path ./data/HAR_new --exp 'results folder name' --model_type 'model type' --data_type 'data type' --penalty_type L2

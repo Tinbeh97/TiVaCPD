@@ -50,7 +50,7 @@ def mmdagg(
     kernel_matrices_list = kernel_matrices(
         X, Y, kernel_type, median_bandwidth, bandwidth_multipliers
     ) 
-
+    #print(np.array(kernel_matrices_list).shape)
     return mmdagg_custom(
         seed, 
         kernel_matrices_list, 

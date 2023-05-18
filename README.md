@@ -1,7 +1,6 @@
 ### Time-Varying Correlation Networks for Interpretable Change Point Detection (TiVaCPD)
-
-The models presented in this represetory are mainly applied for biometric application. 
-For more information on this work please read [Time-Varying Correlation Networks for Interpretable Change Point Detection]().
+This repo contains an official code for TiVaCPD change point detection method. The overview of the methodology is shown below.
+For more information on this work please read [Dynamic Interpretable Change Point Detection]().
 
 ## Prerequisites
 

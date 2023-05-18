@@ -395,7 +395,7 @@ class MMDATVGL_CPD():
     def __init__(self, series:np.array, p_wnd_dim:int=5, f_wnd_dim:int=10, threshold:int=.05, alpha:int=.05,
     kernel_type='gaussian', approx_type='permutation', B1:int=1000, B2:int=1000, B3:int=100, weights_type='uniform', l_minus:int=1, l_plus:int=5, 
                                         alpha_:int=0.4, beta:int=0.4, penalty_type='L1', slice_size:int=10, overlap:int=1, max_iters:int=500, data_path = '', 
-                                        sample = '', wavelet=False, wave_shape = 'mexh', wave_ext = 'smooth', data_type='HAR', hyp_tuning=False):
+                                        sample = '', wavelet=False, wave_shape = 'mexh', wave_ext = 'smooth', data_type='HAR', hyp_tuning=False, plot_verbose=False):
         """
         @param series - timeseries
         @param p_wnd_dim - past window size
@@ -446,6 +446,7 @@ class MMDATVGL_CPD():
         self.wave_ext = wave_ext #'periodic'
         self.remove_corr = False
         self.hyp_tuning = hyp_tuning
+        self.plot_verbose = plot_verbose
 
         if(not(self.hyp_tuning)):
             if data_type in ['beewaggle', 'beedance', 'occupancy']:
@@ -529,12 +530,25 @@ class MMDATVGL_CPD():
             B1 = B1, B2 = B2, B3 = B3)
             
             if hyp >=threshold:
+                if(self.plot_verbose):
+                    plt.figure()
+                    plt.plot(prev)
+                    plt.savefig('image_out/prev'+str(i)+'.png')
+                    plt.figure()
+                    plt.plot(next)
+                    plt.savefig('image_out/next'+str(i)+'.png')
                 run_length = p_wnd_dim
                 mmd_agg = np.concatenate((mmd_agg, np.repeat(hyp, 1)))
             else:   
                 run_length += 1
                 mmd_agg = np.concatenate((mmd_agg, np.repeat(0, 1)))
             i=i+1
+
+        if(self.plot_verbose):
+            plt.figure()
+            plt.plot(mmd_agg)
+            plt.savefig('image_out/mmd_agg'+'.png')
+        
         #mmd_agg = np.absolute(mmd_agg)
 
         # Min-max 

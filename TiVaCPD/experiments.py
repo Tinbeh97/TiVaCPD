@@ -182,12 +182,21 @@ def main():
 
             X = X_samples[i]
             y_true = y_true_samples[i]
-            
+
+            plot_verbose = False
+
             model = MMDATVGL_CPD(X, max_iters = args.max_iters, overlap=args.overlap, alpha = 0.001, threshold = args.threshold, f_wnd_dim = args.f_wnd_dim, p_wnd_dim = args.p_wnd_dim, 
-                                 data_path = data_path, sample = i, slice_size=args.slice_size,  penalty_type = args.penalty_type, wavelet = False, data_type=args.data_type) 
+                                 data_path = data_path, sample = i, slice_size=args.slice_size,  penalty_type = args.penalty_type, wavelet = False, data_type=args.data_type, plot_verbose=plot_verbose) 
 
             mmd_score = model.mmd_score #shift(model.mmd_score, args.p_wnd_dim)
             corr_score = model.corr_score
+            if(plot_verbose):
+                plt.figure()
+                plt.plot(mmd_score)
+                plt.savefig('image_out/mmd_score'+'.png')
+                plt.figure()
+                plt.plot(corr_score)
+                plt.savefig('image_out/corr_score'+'.png')
 
             if(args.wavelet):
                 model_wav = MMDATVGL_CPD(X, max_iters = args.max_iters, overlap=args.overlap, alpha = 0.001, threshold = args.threshold, f_wnd_dim = args.f_wnd_dim, p_wnd_dim = args.p_wnd_dim, 
@@ -260,9 +269,8 @@ def main():
                 all_scores = np.transpose(np.array(all_scores))
                 print('all score shape: ', all_scores.shape)
 
-                plot_w = False
                 if(args.ensemble_win):
-                    final_score = windowed_ensemble(all_scores, window_size=21, w_corr=w_corr, plot_w=plot_w)
+                    final_score = windowed_ensemble(all_scores, window_size=21, w_corr=w_corr, plot_w=plot_verbose)
                     print(np.array(mmd_score_nor).shape, final_score.shape)
                 else:
                     if(w_corr):
@@ -282,7 +290,7 @@ def main():
                                 #D[i,j] =  np.mean(abs(all_scores[:,i] - all_scores[:,j]))
                                 D[i,j] =  np.mean(abs(all_scores[:,i] - np.mean(all_scores[:,j])))
                                 D[j,i] = D[i,j]
-                        if(plot_w):
+                        if(plot_verbose):
                             plt.figure()
                             plt.imshow(D)
                             plt.colorbar()

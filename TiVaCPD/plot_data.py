@@ -137,11 +137,20 @@ def main():
             y_true_samples.append(y_true)
 
     x_samples = X_samples[0]
-    for i in range(len(x_samples[1])):
-        x = x_samples[:,i]
-        plt.figure()
-        plt.plot(x)
-        plt.savefig('image_out/x_'+str(i)+'.png')
+
+    #for i in range(len(x_samples[1])):
+    x = x_samples[:,0]
+    plt.figure()
+    plt.plot(x, 'b')
+    plt.savefig('image_out/x_'+str(0)+'.png')
+    x = x_samples[:,1]
+    plt.figure()
+    plt.plot(x, 'orange')
+    plt.savefig('image_out/x_'+str(1)+'.png')
+    x = x_samples[:,2]
+    plt.figure()
+    plt.plot(x, 'g')
+    plt.savefig('image_out/x_'+str(2)+'.png')
         
 
 

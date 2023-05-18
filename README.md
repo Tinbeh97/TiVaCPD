@@ -5,20 +5,17 @@ For more information on this work please read [Dynamic Interpretable Change Poin
 
 ![Network Overview](https://github.com/Tinbeh97/TiVaCPD/blob/main/Overview.jpg "network overview")
 ## Requirements
+All codes are written for Python 3.9.16 (https://www.python.org/) on Linux platform. The required packages are in the requiements (TiVaCPD/requirements.txt) file.
 
 To install requirements:
 
 ```setup
 pip install -r requirements.txt
 ```
-## Prerequisites
-
-All codes are written for Python 3.9.16 (https://www.python.org/) on Linux platform. The required packages are in the requiements (TiVaCPD/requirements.txt) file.
-
-%### Clone this repository
-%```
-%git clone git@github.com:
-%```
+<>### Clone this repository
+<>```
+<>git clone git@github.com:
+<>```
 ## Previous work
 
 This represetory contains the codes for previous work.

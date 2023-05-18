@@ -1,7 +1,7 @@
 ### Time-Varying Correlation Networks for Interpretable Change Point Detection (TiVaCPD)
 This repo contains an official code for TiVaCPD change point detection method. The overview of the methodology is shown below.
 For more information on this work please read [Dynamic Interpretable Change Point Detection]().
-![overview image](./Overview2.pdf)
+![overview image](https://github.com/Tinbeh97/MovieGenre/blob/main/Overview2.pdf)
 ## Prerequisites
 
 All codes are written for Python 3.9.16 (https://www.python.org/) on Linux platform. The required packages are in the requiements (TiVaCPD/requirements.txt) file.

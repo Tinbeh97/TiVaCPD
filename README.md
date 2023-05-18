@@ -12,10 +12,12 @@ To install requirements:
 ```setup
 pip install -r requirements.txt
 ```
-<>### Clone this repository
-<>```
-<>git clone git@github.com:
-<>```
+<!---
+### Clone this repository
+```
+git clone git@github.com:
+```
+--->
 ## Previous work
 
 This represetory contains the codes for previous work.
@@ -40,6 +42,7 @@ python3 hyp_tune.py --data_path ./data/beedance --exp beedance --model_type MMDA
 ## Inference
 
 ## Pre-trained Models
-
-%## Citation
-%If you find this repository useful, please consider citing the following papers: 
+<!---
+## Citation
+If you find this repository useful, please consider citing the following papers: 
+--->

@@ -31,7 +31,7 @@ The TiVACPD method was tested on 4 simulated datasets and 2 real world datasets.
 For generating the simulated datasets use the following commands:
 - For Jumping Mean, changing_variance, and changing correlation CPs
 ```
-python3 simulate.py --path saving_path --constant_mean --constant_var --constant_corr
+python3 simulate.py --path saving_path --constant_mean True_or_False --constant_var True_or_False --constant_corr True_or_False
 ```
 - For Arbitrary CPs
 ```

@@ -13,6 +13,8 @@ from load_data import *
 import matplotlib
 from performance import *
 import roerich
+from roerich.change_point import ChangePointDetectionClassifier
+
 from cpd_methods import *
 from performance import *
 import fnmatch,os
@@ -68,6 +70,16 @@ def main():
 
             X_samples.append(X)
             y_true_samples.append(y_true)
+
+    if args.data_type in ['new_simulated']:
+        data_path = os.path.join(args.data_path)
+        n_samples = len(fnmatch.filter(os.listdir(data_path),'series_*'))
+        X_samples = []
+        y_true_samples = []
+        for i in range(n_samples):
+            X, labels = load_simulated_new(data_path, i)
+            X_samples.append(X)
+            y_true_samples.append(labels)
 
     if args.data_type in ['block_correlation', 'block']:
         data_path = os.path.join(args.data_path)
@@ -165,9 +177,10 @@ def main():
     f1_scores = []
     precision_scores  =[]
     recall_scores = []
+    plot_verbose = False
 
     for i in range(0, len(X_samples)):
-        print(i)
+        print('sample: ', i)
         if args.model_type == 'MMDATVGL_CPD':
             
             data_path = os.path.join(args.out_path, args.exp)
@@ -183,7 +196,6 @@ def main():
             X = X_samples[i]
             y_true = y_true_samples[i]
 
-            plot_verbose = False
 
             model = MMDATVGL_CPD(X, max_iters = args.max_iters, overlap=args.overlap, alpha = 0.001, threshold = args.threshold, f_wnd_dim = args.f_wnd_dim, p_wnd_dim = args.p_wnd_dim, 
                                  data_path = data_path, sample = i, slice_size=args.slice_size,  penalty_type = args.penalty_type, wavelet = False, data_type=args.data_type, plot_verbose=plot_verbose) 
@@ -194,9 +206,12 @@ def main():
                 plt.figure()
                 plt.plot(mmd_score)
                 plt.savefig('image_out/mmd_score'+'.png')
+                plt.clf()
                 plt.figure()
                 plt.plot(corr_score)
                 plt.savefig('image_out/corr_score'+'.png')
+                plt.clf()
+                plt.close()
 
             if(args.wavelet):
                 model_wav = MMDATVGL_CPD(X, max_iters = args.max_iters, overlap=args.overlap, alpha = 0.001, threshold = args.threshold, f_wnd_dim = args.f_wnd_dim, p_wnd_dim = args.p_wnd_dim, 
@@ -222,35 +237,41 @@ def main():
 
             # processed combined score
 
-            mmd_score_savgol  = mmd_score #savgol_filter(mmd_score, 11, 1)  
+            mmd_score_savgol  = savgol_filter(mmd_score, 7, 1)  
+            mmd_score_savgol = np.maximum (0, mmd_score_savgol)
             corr_score_savgol = savgol_filter(corr_score, 7, 1) #savgol_filter(x, window_length, polyorder
-            
+            corr_score_savgol = np.maximum (0, corr_score_savgol)
             #if not np.all((mmd_score_savgol == 0)):
             #    mmd_score_savgol /= np.max(np.abs(mmd_score_savgol),axis=0)
             #if not np.all((corr_score_savgol == 0)):
             #    corr_score_savgol /= np.max(np.abs(corr_score_savgol),axis=0)
             
-            combined_score_savgol  = savgol_filter(np.add(abs(mmd_score_savgol), abs(corr_score_savgol)), 11,   1) 
+            combined_score_savgol  = savgol_filter(np.add(mmd_score, corr_score_savgol), 11,   1) 
+            combined_score_savgol = np.maximum (0, combined_score_savgol)
 
             if not np.all((combined_score_savgol == 0)):
-                combined_score_savgol /= np.max(np.abs(combined_score_savgol),axis=0) 
+                combined_score_savgol /= np.max(combined_score_savgol,axis=0) 
             #"""
             mmd_score_nor = stats.zscore(mmd_score, axis=0)
             corr_score_nor = stats.zscore(corr_score, axis=0)
             do_ensemble = True
             if(np.sum(np.isnan(mmd_score_nor))>=1 or np.sum(np.isnan(corr_score_nor))>=1):
                 do_ensemble = False
+                print('not doing ensemble')
             #"""
+            select_score, score_final = compare_scores(corr_score, mmd_score, corr_score_savgol, mmd_score_savgol, args.margin, args.score_threshold)
             q3, q1 = np.percentile(corr_score_nor, [75 ,25])
             corr_iqr = q3 - q1
             corr_vote = (corr_score_nor < (1.5 * corr_iqr))
             corr_score_nor = corr_score_nor * corr_vote.astype(int)
             #"""
-
             w_corr = False
-            if(not(do_ensemble)):
+            if(not(do_ensemble) or select_score):
             #if((model.tvgl_iter> 200) & (model.offset> 0.01)):
-                y_pred = combined_score_savgol
+                if(select_score):
+                    y_pred = score_final
+                else: 
+                    y_pred = combined_score_savgol
             else:
                 all_scores = [mmd_score_nor, corr_score_nor, corr_score_savgol, combined_score_savgol]
                 print('all score shape: ', np.array(all_scores).shape)
@@ -333,9 +354,9 @@ def main():
             save_data(os.path.join(data_path, ''.join(['corr_score_', str(i), '.pkl'])), corr_score)
 
         
-            y_pred = mmd_score
+            y_pred = mmd_score_savgol
             metrics = ComputeMetrics(y_true, y_pred, args.margin, threshold = args.score_threshold)
-            print("DistScore:", "AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
+            print("DistScore savgol:", "AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
 
             y_pred = corr_score
             metrics = ComputeMetrics(y_true, y_pred, args.margin, threshold = args.score_threshold)
@@ -347,7 +368,7 @@ def main():
 
             print("Processed:")
 
-            y_pred = mmd_score_savgol
+            y_pred = mmd_score
             """
             print('mmd min: ', np.min(y_true), np.min(y_pred))
             print('mmd max: ', np.max(y_true), np.max(y_pred))
@@ -374,7 +395,10 @@ def main():
             print("CorrScore:", "AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
             
 
+            combined_score_savgol  = savgol_filter(combined_score_savgol, 11,   1) 
+            combined_score_savgol = np.maximum (0, combined_score_savgol)
             y_pred = combined_score_savgol
+
             metrics = ComputeMetrics(y_true, y_pred, args.margin, threshold = args.score_threshold)
             auc_scores_combined.append(metrics.auc)
             f1_scores_combined.append(metrics.f1)
@@ -382,35 +406,41 @@ def main():
             recall_scores_combined.append(metrics.recall)
             print("EnsembleScore:", "AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
             peaks=metrics.peaks
-            
-            plt.figure(figsize= (30,3))
-            plt.plot(X)
-            plt.plot(y_true, label = 'y_true')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['X_', str(i), '.png'])))
-            plt.clf()
 
-            plt.figure(figsize= (30,3))
-            plt.plot(mmd_score_savgol, label = 'mmd_score_savgol')
-            plt.plot(corr_score_savgol, label = 'corr_score_savgol')
-            plt.plot(combined_score_savgol, label = 'combined_score_savgol')
-            plt.plot(y_true, label = 'y_true')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['TiVaCPD_score_components_', str(i), '.png'])))
-            plt.clf()
+            if(plot_verbose):
+                plt.figure(figsize= (30,3))
+                plt.plot(X)
+                plt.plot(y_true, label = 'y_true')
+                plt.legend()
+                plt.title(args.exp)
+                plt.savefig(os.path.join(data_path, ''.join(['X_', str(i), '.png'])))
+                plt.clf()
+                plt.close()
 
-            plt.figure(figsize= (30,3))
-            plt.plot(y_true, label = 'y_true')
-            plt.plot(peaks, label = 'peaks')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['TiVaCPD_score_components_peaks_', str(i), '.png'])))
-            plt.clf()
+                plt.figure(figsize= (30,3))
+                plt.plot(mmd_score_savgol, label = 'mmd_score_savgol')
+                plt.plot(corr_score_savgol, label = 'corr_score_savgol')
+                plt.plot(combined_score_savgol, label = 'combined_score_savgol')
+                plt.plot(y_true, label = 'y_true')
+                plt.legend()
+                plt.title(args.exp)
+                plt.savefig(os.path.join(data_path, ''.join(['TiVaCPD_score_components_', str(i), '.png'])))
+                plt.clf()
+                plt.close()
 
+                plt.figure(figsize= (30,3))
+                plt.plot(y_true, label = 'y_true')
+                plt.plot(peaks, label = 'peaks')
+                plt.legend()
+                plt.title(args.exp)
+                plt.savefig(os.path.join(data_path, ''.join(['TiVaCPD_score_components_peaks_', str(i), '.png'])))
+                plt.clf()
+
+                plt.close()
+
+            print('sample: ', i, ' end')
             print(args.data_type, args.model_type, args.exp, args.score_type)
-
+            #exit()
         elif args.model_type == 'GRAPHTIME_CPD':
             X = X_samples[i]
             y_true = y_true_samples[i]
@@ -429,31 +459,33 @@ def main():
             recall_scores.append(metrics.recall)
             peaks = metrics.peaks
             print("AUC:",np.round(metrics.auc, 2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
-            
-            plt.figure(figsize= (30,3))
-            plt.plot(X)
-            plt.plot(y_true, label = 'y_true')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['X_', str(i), '.png'])))
-            plt.clf()
+            if(plot_verbose):
+                plt.figure(figsize= (30,3))
+                plt.plot(X)
+                plt.plot(y_true, label = 'y_true')
+                plt.legend()
+                plt.title(args.exp)
+                plt.savefig(os.path.join(data_path, ''.join(['X_', str(i), '.png'])))
+                plt.clf()
+                plt.close()
 
-            plt.figure(figsize= (30,3))
-            plt.plot(y_pred, label = 'graphtime')
-            plt.plot(y_true, label = 'y_true')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['GRAPHTIME_score_', str(i), '.png'])))
-            plt.clf()
+                plt.figure(figsize= (30,3))
+                plt.plot(y_pred, label = 'graphtime')
+                plt.plot(y_true, label = 'y_true')
+                plt.legend()
+                plt.title(args.exp)
+                plt.savefig(os.path.join(data_path, ''.join(['GRAPHTIME_score_', str(i), '.png'])))
+                plt.clf()
+                plt.close()
 
-
-            plt.figure(figsize= (30,3))
-            plt.plot(y_true, label = 'y_true')
-            plt.plot(peaks, label = 'peaks')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['GRAPHTIME_peaks_', str(i), '.png'])))
-            plt.clf()
+                plt.figure(figsize= (30,3))
+                plt.plot(y_true, label = 'y_true')
+                plt.plot(peaks, label = 'peaks')
+                plt.legend()
+                plt.title(args.exp)
+                plt.savefig(os.path.join(data_path, ''.join(['GRAPHTIME_peaks_', str(i), '.png'])))
+                plt.clf()
+                plt.close()
 
             data_path = os.path.join(args.out_path, args.exp)
             if not os.path.exists(args.out_path): 
@@ -478,30 +510,31 @@ def main():
             peaks=metrics.peaks
 
             print("AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
+            if(plot_verbose):
+                plt.figure(figsize= (30,3))
+                plt.plot(X)
+                plt.plot(y_true, label = 'y_true')
+                plt.legend()
+                plt.title(args.exp)
+                plt.savefig(os.path.join(data_path, ''.join(['X_', str(i), '.png'])))
+                plt.clf()
 
-            plt.figure(figsize= (30,3))
-            plt.plot(X)
-            plt.plot(y_true, label = 'y_true')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['X_', str(i), '.png'])))
-            plt.clf()
-
-            plt.figure(figsize= (30,3))
-            plt.plot(y_pred, label = 'KLCPD')
-            plt.plot(y_true, label = 'y_true')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['KLCPD_score_', str(i), '.png'])))
-            plt.clf()
-            
-            plt.figure(figsize= (30,3))
-            plt.plot(y_true, label = 'y_true')
-            plt.plot(peaks, label = 'peaks')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['KLCPD_peaks_', str(i), '.png'])))
-            plt.clf()
+                plt.figure(figsize= (30,3))
+                plt.plot(y_pred, label = 'KLCPD')
+                plt.plot(y_true, label = 'y_true')
+                plt.legend()
+                plt.title(args.exp)
+                plt.savefig(os.path.join(data_path, ''.join(['KLCPD_score_', str(i), '.png'])))
+                plt.clf()
+                
+                plt.figure(figsize= (30,3))
+                plt.plot(y_true, label = 'y_true')
+                plt.plot(peaks, label = 'peaks')
+                plt.legend()
+                plt.title(args.exp)
+                plt.savefig(os.path.join(data_path, ''.join(['KLCPD_peaks_', str(i), '.png'])))
+                plt.clf()
+                plt.close()
 
             data_path = os.path.join(args.out_path, args.exp)
             if not os.path.exists(args.out_path): 
@@ -514,10 +547,17 @@ def main():
         elif args.model_type == 'roerich':
             X = X_samples[i]
             y_true = y_true_samples[i]
+            #ChangePointDetectionClassifier
+            """
             model = roerich.OnlineNNClassifier(net='default', scaler="default", metric="KL_sym",
                   periods=1, window_size=10, lag_size=30, step=10, n_epochs=25,
                   lr=0.01, lam=0.0001, optimizer="Adam"
                  )
+            #"""
+            model = ChangePointDetectionClassifier(base_classifier='mlp', metric='klsym', periods=1,
+                                     window_size=10, step=1, n_runs=1)
+            #score, cps_pred = model.predict(X)
+
             y_pred, _ = model.predict(X)
             metrics = ComputeMetrics(y_true, y_pred, args.margin, threshold = args.score_threshold)
             auc_scores.append(metrics.auc)
@@ -526,31 +566,31 @@ def main():
             recall_scores.append(metrics.recall)
             peaks =metrics.peaks
             print("AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
+            if(plot_verbose):
+                plt.figure(figsize= (30,3))
+                plt.plot(X)
+                plt.plot(y_true, label = 'y_true')
+                plt.legend()
+                plt.title(args.exp)
+                plt.savefig(os.path.join(data_path, ''.join(['X_', str(i), '.png'])))
+                plt.clf()
 
-            plt.figure(figsize= (30,3))
-            plt.plot(X)
-            plt.plot(y_true, label = 'y_true')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['X_', str(i), '.png'])))
-            plt.clf()
+                plt.figure(figsize= (30,3))
+                plt.plot(y_pred, label = 'roerich')
+                plt.plot(y_true, label = 'y_true')
+                plt.legend()
+                plt.title(args.exp)
+                plt.savefig(os.path.join(data_path, ''.join(['roerich_score_', str(i), '.png'])))
+                plt.clf()
 
-            plt.figure(figsize= (30,3))
-            plt.plot(y_pred, label = 'roerich')
-            plt.plot(y_true, label = 'y_true')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['roerich_score_', str(i), '.png'])))
-            plt.clf()
-
-
-            plt.figure(figsize= (30,3))
-            plt.plot(y_true, label = 'y_true')
-            plt.plot(peaks, label = 'peaks')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['roerich_peaks_', str(i), '.png'])))
-            plt.clf()
+                plt.figure(figsize= (30,3))
+                plt.plot(y_true, label = 'y_true')
+                plt.plot(peaks, label = 'peaks')
+                plt.legend()
+                plt.title(args.exp)
+                plt.savefig(os.path.join(data_path, ''.join(['roerich_peaks_', str(i), '.png'])))
+                plt.clf()
+                plt.close()
 
             data_path = os.path.join(args.out_path, args.exp)
             if not os.path.exists(args.out_path): 
@@ -580,30 +620,31 @@ def main():
             recall_scores.append(metrics.recall)
             peaks = metrics.peaks
             print("AUC:",np.round(metrics.auc,2), "F1:",np.round(metrics.f1,2), "Precision:", np.round(metrics.precision,2), "Recall:",np.round(metrics.recall,2))
+            if(plot_verbose):
+                plt.figure(figsize= (30,3))
+                plt.plot(X)
+                plt.plot(y_true, label = 'y_true')
+                plt.legend()
+                plt.title(args.exp)
+                plt.savefig(os.path.join(data_path, ''.join(['X_', str(i), '.png'])))
+                plt.clf()
 
-            plt.figure(figsize= (30,3))
-            plt.plot(X)
-            plt.plot(y_true, label = 'y_true')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['X_', str(i), '.png'])))
-            plt.clf()
+                plt.figure(figsize= (30,3))
+                plt.plot(y_true, label = 'y_true')
+                plt.plot(y_pred, label = 'y_pred')
+                plt.legend()
+                plt.title(args.exp)
+                plt.savefig(os.path.join(data_path, ''.join(['ruptures_score_', str(i), '.png'])))
+                plt.clf()
 
-            plt.figure(figsize= (30,3))
-            plt.plot(y_true, label = 'y_true')
-            plt.plot(y_pred, label = 'y_pred')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['ruptures_score_', str(i), '.png'])))
-            plt.clf()
-
-            plt.figure(figsize= (30,3))
-            plt.plot(y_true, label = 'y_true')
-            plt.plot(peaks, label = 'peaks')
-            plt.legend()
-            plt.title(args.exp)
-            plt.savefig(os.path.join(data_path, ''.join(['ruptures_peaks_', str(i), '.png'])))
-            plt.clf()
+                plt.figure(figsize= (30,3))
+                plt.plot(y_true, label = 'y_true')
+                plt.plot(peaks, label = 'peaks')
+                plt.legend()
+                plt.title(args.exp)
+                plt.savefig(os.path.join(data_path, ''.join(['ruptures_peaks_', str(i), '.png'])))
+                plt.clf()
+                plt.close()
 
             data_path = os.path.join(args.out_path, args.exp)
             if not os.path.exists(args.out_path): 
@@ -616,6 +657,7 @@ def main():
     
 
     if args.model_type == 'MMDATVGL_CPD':
+        print(f'here: {f1_scores_combined}, {f1_scores_mmdagg}, {f1_scores_correlation}')
         print("auc_scores_combined_CI", mean_confidence_interval(auc_scores_combined))
         print("f1_scores_combined_CI", mean_confidence_interval(f1_scores_combined))
         print("precision_scores_combined_CI", mean_confidence_interval(precision_scores_combined))

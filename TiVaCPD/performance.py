@@ -1,6 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.colors as colors
+from scipy.signal import savgol_filter
 
 import warnings
 from scipy.signal import find_peaks, peak_prominences
@@ -181,9 +182,7 @@ class ComputeMetrics():
             return score_peaks 
         else:
             return score 
-
-
-
+        
     def get_auc(self, y_true, y_pred, model_type):
         auc_scores = []
         minLength = int(min(len(y_true), len(y_pred)))
@@ -199,6 +198,42 @@ class ComputeMetrics():
         auc_scores.append(auc(fpr, tpr))
         return auc_scores
 
+
+def compare_scores(y_conv, y_dist, y_cov_sg, y_dist_sg, moe, threshold):
+    peaks_conv, _ = find_peaks(y_conv, height=threshold, distance=moe * 2)
+    peaks_dist, _ = find_peaks(y_dist, height=threshold, distance=moe * 2)
+    peaks_conv_sg, _ = find_peaks(y_cov_sg, height=threshold, distance=moe * 2)
+    peaks_dist_sg, _ = find_peaks(y_dist_sg, height=threshold, distance=moe * 2)
+    len_conv, len_conv_sg, len_dist, len_dist_sg = len(peaks_conv), len(peaks_conv_sg), len(peaks_dist), len(peaks_dist_sg)
+    print('len_conv, len_conv_sg, len_dist, len_dist_sg: ', len_conv, len_conv_sg, len_dist, len_dist_sg )
+    if(len_conv < 2):
+        return True, y_dist
+    if((len_conv_sg < (len_conv - 2)) and (len_conv_sg>2)):
+        y_conv =  y_cov_sg
+        savgol_new  = savgol_filter(y_conv, 11,   1)
+        peaks_conv_sg, _ = find_peaks(savgol_new, height=threshold, distance=moe * 2)
+        len_conv_sg2 = len(peaks_conv_sg)
+        while(True):
+            print('new lengths: ', len_conv_sg, len_conv_sg2) 
+            if((len_conv_sg2 < (len_conv_sg - 2)) and (len_conv_sg2>2)):
+                y_conv =  savgol_new
+                savgol_new  = savgol_filter(y_conv, 11,   1) 
+                peaks_conv_sg, _ = find_peaks(savgol_new, height=threshold, distance=moe * 2)
+                len_conv_sg = len_conv_sg2
+                len_conv_sg2 = len(peaks_conv_sg)
+            else:
+                break
+    if(len_dist < 2):
+        return True, y_conv
+    if((len_dist > (len_conv + 5))):
+        return True, y_conv
+    if((len_conv > (len_dist + 5))):
+        return True, y_dist
+    if((len_dist_sg > (len_dist + 5)) or (len_dist_sg < (len_dist + 5))):
+        exit()
+    if((len_conv_sg > (len_conv + 5)) or (len_conv_sg < (len_conv + 5))):
+        exit()
+    return False, None
 
 def mean_confidence_interval(data, confidence=0.95):
     a = 1.0 * np.array(data)

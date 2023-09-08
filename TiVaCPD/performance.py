@@ -206,7 +206,7 @@ def compare_scores(y_conv, y_dist, y_cov_sg, y_dist_sg, moe, threshold):
     peaks_dist_sg, _ = find_peaks(y_dist_sg, height=threshold, distance=moe * 2)
     len_conv, len_conv_sg, len_dist, len_dist_sg = len(peaks_conv), len(peaks_conv_sg), len(peaks_dist), len(peaks_dist_sg)
     print('len_conv, len_conv_sg, len_dist, len_dist_sg: ', len_conv, len_conv_sg, len_dist, len_dist_sg )
-    if(len_conv < 2):
+    if(len_conv < 1):
         return True, y_dist
     if((len_conv_sg < (len_conv - 2)) and (len_conv_sg>2)):
         y_conv =  y_cov_sg
@@ -219,7 +219,7 @@ def compare_scores(y_conv, y_dist, y_cov_sg, y_dist_sg, moe, threshold):
             peaks_conv_sg, _ = find_peaks(savgol_new, height=threshold, distance=moe * 2)
             len_conv_sg = len_conv_sg2
             len_conv_sg2 = len(peaks_conv_sg)
-    if(len_dist < 2):
+    if(len_dist < 1):
         return True, y_conv
     if((len_dist > (len_conv + 5))):
         return True, y_conv

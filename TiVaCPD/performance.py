@@ -225,10 +225,12 @@ def compare_scores(y_conv, y_dist, y_cov_sg, y_dist_sg, moe, threshold):
         return True, y_conv
     if((len_conv > (len_dist + 5))):
         return True, y_dist
+    """
     if((len_dist_sg > (len_dist + 5)) or (len_dist_sg < (len_dist + 5))):
         exit()
     if((len_conv_sg > (len_conv + 5)) or (len_conv_sg < (len_conv + 5))):
         exit()
+    #"""
     return False, None
 
 def mean_confidence_interval(data, confidence=0.95):

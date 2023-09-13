@@ -1,4 +1,4 @@
-# TiVaCPD: Dynamic Interpretable Change Point Detection
+# TiVaCPD: Dynamic Interpretable Change Point Detection for Physiological Data Analysis
 This repository is the official implementation of TiVaCPD change point detection paper. The overview of the methodology is shown below.
 For more information on this work please read [Dynamic Interpretable Change Point Detection]().
 
